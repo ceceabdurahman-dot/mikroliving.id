@@ -1,0 +1,34 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&family=Manrope:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+html {
+  scroll-behavior: smooth;
+}
+
+@theme {
+  --font-headline: "Noto Serif", serif;
+  --font-body: "Manrope", sans-serif;
+
+  --color-primary: #785600;
+  --color-on-primary: #ffffff;
+  --color-background: #fbf9f6;
+  --color-surface: #fbf9f6;
+  --color-on-surface: #1b1c1a;
+  --color-on-surface-variant: #4f4535;
+  --color-outline-variant: #d3c4af;
+}
+
+@layer base {
+  body {
+    @apply bg-background text-on-surface font-body;
+  }
+}
+
+.serif-italic {
+  font-family: "Noto Serif", serif;
+  font-style: italic;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

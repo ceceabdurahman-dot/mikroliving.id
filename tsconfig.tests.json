@@ -1,0 +1,20 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "rootDir": "src",
+    "outDir": ".codex-test-build",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "types": ["node"],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "allowImportingTsExtensions": false,
+    "ignoreDeprecations": "6.0"
+  },
+  "include": [
+    "src/components/**/*.ts",
+    "src/components/**/*.tsx",
+    "src/services/**/*.ts",
+    "src/services/**/*.tsx"
+  ]
+}
