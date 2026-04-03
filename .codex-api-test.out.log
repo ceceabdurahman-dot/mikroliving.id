@@ -1,0 +1,9 @@
+
+> react-example@0.0.0 dev
+> tsx server.ts
+
+[dotenv@17.3.1] injecting env (4) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+Server running on http://localh[2m16.55.07[22m [36m[1m[vite][22m[39m [32m.env changed, restarting server...[39m
+[2m16.55.07[22m [36m[1m[vite][22m[39m server restarted.
+[2m18.13.46[22m [36m[1m[vite][22m[39m [32m.env changed, restarting server...[39m
+[2m18.13.46[22m [36m[1m[vite][22m[39m server restarted.

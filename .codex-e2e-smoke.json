@@ -1,0 +1,16 @@
+{
+  "home_status": 200,
+  "home_has_root": true,
+  "admin_page_status": 200,
+  "admin_page_has_root": true,
+  "projects_status": 200,
+  "projects_count": 2,
+  "login_status": 200,
+  "login_success": true,
+  "contact_status": 200,
+  "contact_success": true,
+  "create_status": 200,
+  "created_project_id": 6,
+  "cleanup_status": 200,
+  "cleanup_success": true
+}

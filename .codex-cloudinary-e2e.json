@@ -1,0 +1,11 @@
+{
+    "login_success":  true,
+    "token_present":  true,
+    "upload_success":  true,
+    "image_url":  "https://res.cloudinary.com/dhrzgipqj/image/upload/v1774438694/mikroliving/projects/cloudinary-e2e-test.png",
+    "public_id":  "mikroliving/projects/cloudinary-e2e-test",
+    "cleanup_result":  [
+                           "[dotenv@17.3.1] injecting env (7) from .env -- tip: ?? agentic secret storage: https://dotenvx.com/as2",
+                           "{\"result\":\"ok\"}"
+                       ]
+}

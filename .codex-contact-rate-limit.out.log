@@ -1,0 +1,8 @@
+
+> react-example@0.0.0 dev
+> tsx server.ts
+
+[dotenv@17.3.1] injecting env (7) from .env -- tip: ⚡️ secrets for agents: https://dotenvx.com/as2
+Server running on http://localhost:3000
+[2m19.49.35[22m [36m[1m[vite][22m[39m [32m.env changed, restarting server...[39m
+[2m19.49.36[22m [36m[1m[vite][22m[39m server restarted.

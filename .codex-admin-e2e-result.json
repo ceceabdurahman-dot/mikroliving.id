@@ -1,0 +1,9 @@
+{
+    "login_success":  true,
+    "token_present":  true,
+    "created_project_id":  4,
+    "update_success":  true,
+    "db_before_delete":  "4|Admin Panel E2E Project Updated|Residential|Bandung|52 m2|0",
+    "delete_success":  true,
+    "remaining_test_projects":  0
+}

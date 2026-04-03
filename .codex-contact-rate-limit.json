@@ -1,0 +1,34 @@
+{
+  "attempts": [
+    {
+      "status": 200,
+      "retry_after": null,
+      "body": "{\"success\":true,\"message\":\"Inquiry sent successfully\"}"
+    },
+    {
+      "status": 200,
+      "retry_after": null,
+      "body": "{\"success\":true,\"message\":\"Inquiry sent successfully\"}"
+    },
+    {
+      "status": 200,
+      "retry_after": null,
+      "body": "{\"success\":true,\"message\":\"Inquiry sent successfully\"}"
+    },
+    {
+      "status": 200,
+      "retry_after": null,
+      "body": "{\"success\":true,\"message\":\"Inquiry sent successfully\"}"
+    },
+    {
+      "status": 200,
+      "retry_after": null,
+      "body": "{\"success\":true,\"message\":\"Inquiry sent successfully\"}"
+    },
+    {
+      "status": 429,
+      "retry_after": "600",
+      "body": "{\"error\":\"Too many inquiry submissions. Please try again in a few minutes.\"}"
+    }
+  ]
+}

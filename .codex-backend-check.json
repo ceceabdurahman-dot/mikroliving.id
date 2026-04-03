@@ -1,0 +1,13 @@
+{
+    "login_success":  true,
+    "invalid_contact_status":  400,
+    "invalid_contact_body":  "",
+    "invalid_project_status":  400,
+    "invalid_project_body":  "",
+    "created_project_id":  5,
+    "missing_update_status":  404,
+    "missing_update_body":  "",
+    "missing_delete_status":  404,
+    "missing_delete_body":  "",
+    "cleanup_delete_success":  true
+}

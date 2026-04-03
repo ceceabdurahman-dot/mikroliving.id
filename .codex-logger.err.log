@@ -1,0 +1,1 @@
+{"level":"warn","message":"http_error","timestamp":"2026-03-25T16:22:42.229Z","meta":{"request_id":"log-redact-1","method":"POST","path":"/api/admin/login","status":401,"error":"Invalid credentials","body":{"username":"admin","password":"[REDACTED]"},"query":{}}}

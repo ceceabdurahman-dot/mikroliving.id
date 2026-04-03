@@ -1,0 +1,39 @@
+{
+    "attempts":  [
+                     {
+                         "status":  401,
+                         "body":  "",
+                         "retry_after":  null
+                     },
+                     {
+                         "status":  401,
+                         "body":  "",
+                         "retry_after":  null
+                     },
+                     {
+                         "status":  401,
+                         "body":  "",
+                         "retry_after":  null
+                     },
+                     {
+                         "status":  401,
+                         "body":  "",
+                         "retry_after":  null
+                     },
+                     {
+                         "status":  401,
+                         "body":  "",
+                         "retry_after":  null
+                     },
+                     {
+                         "status":  429,
+                         "body":  "",
+                         "retry_after":  "900"
+                     }
+                 ],
+    "blocked_success_attempt":  {
+                                    "status":  429,
+                                    "body":  "",
+                                    "retry_after":  "900"
+                                }
+}

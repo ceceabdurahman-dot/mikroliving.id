@@ -1,0 +1,10 @@
+
+> react-example@0.0.0 start
+> node build/server.js
+
+[dotenv@17.3.1] injecting env (15) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+Server running on http://localhost:3000
+{"type":"request","method":"GET","path":"/api/health","status":200,"duration_ms":4.79,"ip":"127.0.0.1","user_agent":"curl/8.18.0","timestamp":"2026-03-25T15:59:04.080Z"}
+{"type":"request","method":"GET","path":"/api/does-not-exist","status":404,"duration_ms":0.91,"ip":"127.0.0.1","user_agent":"curl/8.18.0","timestamp":"2026-03-25T15:59:04.095Z"}
+{"type":"request","method":"GET","path":"/api/does-not-exist","status":404,"duration_ms":0.53,"ip":"127.0.0.1","user_agent":"curl/8.18.0","timestamp":"2026-03-25T15:59:04.110Z"}
+{"type":"request","method":"POST","path":"/api/admin/login","status":200,"duration_ms":80.14,"ip":"127.0.0.1","user_agent":"curl/8.18.0","timestamp":"2026-03-25T15:59:04.220Z"}
