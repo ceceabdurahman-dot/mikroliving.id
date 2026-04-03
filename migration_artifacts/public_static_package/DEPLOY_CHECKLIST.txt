@@ -1,0 +1,50 @@
+CHECKLIST DEPLOY SHARED HOSTING (PUBLIC ONLY)
+
+1. Persiapan lokal
+- Pastikan file yang dipakai adalah `mikroliving_public_static_2026-03-28.zip`.
+- Siapkan juga `mikroliving_2026-03-28.sql` jika hosting Anda menyediakan MySQL.
+- Catatan: paket ini hanya untuk halaman public, bukan CMS/admin Node.js.
+
+2. Upload file website
+- Login ke panel hosting Anda (cPanel / DirectAdmin / File Manager).
+- Buka folder `public_html` atau folder root domain/subdomain.
+- Hapus file default lama seperti `index.html` / `index.php` bawaan jika memang tidak dipakai.
+- Upload file `mikroliving_public_static_2026-03-28.zip`.
+- Extract zip langsung di dalam `public_html`.
+- Pastikan setelah extract, file ini ada di root:
+  - `index.html`
+  - `index.php`
+  - folder `assets/`
+- Jika hosting lebih memprioritaskan PHP, `index.php` akan otomatis memanggil `index.html`.
+
+3. Cek struktur file
+- Struktur akhirnya seharusnya seperti ini:
+  /public_html/index.php
+  /public_html/index.html
+  /public_html/assets/...
+- Pastikan file tidak masuk ke subfolder tambahan seperti `/public_html/public_static_package/`.
+
+4. Import database SQL
+- Masuk ke phpMyAdmin dari panel hosting.
+- Buat database baru, misalnya `mikroliving`.
+- Buat user database dan beri semua privilege ke database itu.
+- Buka database yang baru dibuat.
+- Klik tab `Import`.
+- Upload file `mikroliving_2026-03-28.sql`.
+- Jalankan import sampai selesai tanpa error.
+
+5. Validasi setelah upload
+- Buka domain Anda di browser.
+- Hard refresh (`Ctrl+F5`) agar asset CSS/JS terbaru dipakai.
+- Cek halaman utama, hero, navbar, footer, dan project section.
+
+6. Hal yang perlu dipahami
+- Halaman public akan tampil normal sebagai website statis.
+- CMS/admin tidak akan berfungsi di shared hosting ini karena membutuhkan backend Node.js/Express.
+- Database yang diimport tidak dipakai penuh oleh paket statis ini kecuali backend Node juga dideploy di server lain.
+
+7. Jika website tidak tampil
+- Pastikan file berada langsung di `public_html`, bukan di subfolder hasil extract.
+- Pastikan `index.php` atau `index.html` ada di root.
+- Pastikan folder `assets/` ikut ter-upload lengkap.
+- Jika masih blank, cek apakah hosting memblokir file `.js` besar atau path asset berubah.
