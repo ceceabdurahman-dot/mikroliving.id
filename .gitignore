@@ -7,3 +7,9 @@ coverage/
 logs/
 .env*
 !.env.example
+.codex-*
+migration_artifacts/*_database_*.sql
+migration_artifacts/*_deployment_manifest_*.json
+migration_artifacts/*_hostinger_env_*.env
+migration_artifacts/*_hostinger_node_*.zip
+migration_artifacts/*_hostinger_node_*/
