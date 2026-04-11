@@ -195,7 +195,17 @@ export const api = {
     return response.data;
   },
   hasAdminSession: () => Boolean(localStorage.getItem(ADMIN_TOKEN_KEY)),
-  logout: () => localStorage.removeItem(ADMIN_TOKEN_KEY),
+  logout: async () => {
+    const headers = getAuthHeader();
+
+    try {
+      if (headers.Authorization) {
+        await axios.post(`${API_BASE_URL}/admin/logout`, null, { headers });
+      }
+    } finally {
+      localStorage.removeItem(ADMIN_TOKEN_KEY);
+    }
+  },
   getAdminDashboard: async (): Promise<AdminDashboardData> => {
     try {
       return (await axios.get(`${API_BASE_URL}/admin/dashboard`, { headers: getAuthHeader() })).data;

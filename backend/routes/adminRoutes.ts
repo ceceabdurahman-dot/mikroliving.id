@@ -16,6 +16,7 @@ import {
   getAdminContentHandler,
   getAdminDashboardHandler,
   login,
+  logout,
   updateContactChannelHandler,
   updateInsightHandler,
   updateInquiryHandler,
@@ -38,6 +39,7 @@ export function createAdminRoutes() {
   const uploadLimiter = createRateLimiter(RATE_LIMITS.adminUpload);
 
   router.post("/login", adminLoginLimiter, asyncHandler(login));
+  router.post("/logout", authenticateToken, asyncHandler(logout));
   router.get("/dashboard", authenticateToken, asyncHandler(getAdminDashboardHandler));
   router.get("/content", authenticateToken, asyncHandler(getAdminContentHandler));
   router.post("/projects", authenticateToken, adminWriteLimiter, asyncHandler(createProjectHandler));
