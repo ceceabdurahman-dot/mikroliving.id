@@ -15,7 +15,8 @@
     "preview": "vite preview",
     "clean": "powershell -Command \"if (Test-Path dist) { Remove-Item dist -Recurse -Force }; if (Test-Path build) { Remove-Item build -Recurse -Force }\"",
     "lint": "tsc --noEmit",
-    "test": "node scripts/run-component-tests.mjs"
+    "test": "node scripts/run-component-tests.mjs",
+    "package:upload": "npm run build && powershell -ExecutionPolicy Bypass -File .\\scripts\\create-nodejs-upload-artifacts.ps1"
   },
   "dependencies": {
     "@google/genai": "^1.29.0",

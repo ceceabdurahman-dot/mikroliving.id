@@ -69,6 +69,21 @@ If you deploy using a ZIP file:
    migration artifacts
 3. Upload the ZIP through the Node.js application deployment flow, not the regular PHP/website migrator
 
+## Generate a fresh upload package
+
+From the project root, run:
+
+`npm run package:upload`
+
+This generates:
+
+- a prebuilt Node.js upload ZIP
+- a current database SQL dump when `mysqldump` is available
+- a schema-only SQL fallback for manual import
+
+All generated files are written into `migration_artifacts`.
+The packaging step also supports temporary environment overrides for the artifact name and target credentials, for example `APP_NAME`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`, and the `CLOUDINARY_*` keys.
+
 ## Database
 
 Import the provided SQL dump into a MySQL database first, then configure the matching DB credentials in Hostinger.

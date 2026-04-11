@@ -60,6 +60,13 @@ Before deploying:
    `/admin`
    `/api/health`
 
+Generate a fresh upload package locally with:
+
+`npm run package:upload`
+
+That command creates a Node.js-ready ZIP plus SQL files in `migration_artifacts`.
+You can also override the artifact name and target deployment credentials through environment variables such as `APP_NAME`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`, `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET`.
+
 ### 2. Static public-only deployment
 
 Use this only if your Hostinger plan supports static/PHP hosting but not Node.js apps.
