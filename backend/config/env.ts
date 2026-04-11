@@ -3,7 +3,18 @@ import dotenv from "dotenv";
 dotenv.config();
 
 export const PORT = Number(process.env.PORT) || 3000;
-export const JWT_SECRET = process.env.JWT_SECRET || "mikroliving-secret-key-2026";
+
+function requireEnv(name: string) {
+  const value = process.env[name]?.trim();
+
+  if (!value) {
+    throw new Error(`${name} environment variable is required.`);
+  }
+
+  return value;
+}
+
+export const JWT_SECRET = requireEnv("JWT_SECRET");
 
 export const DB_CONFIG = {
   host: process.env.DB_HOST || "localhost",
