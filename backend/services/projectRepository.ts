@@ -2,10 +2,33 @@ import { ResultSetHeader, RowDataPacket } from "mysql2/promise";
 import { getDb } from "../config/database";
 import { ProjectPayload, ProjectRecord } from "../types/project";
 
+const PUBLIC_PROJECT_FIELDS = [
+  "id",
+  "title",
+  "category",
+  "location",
+  "size",
+  "image_url",
+  "description",
+  "is_featured",
+  "created_at",
+  "updated_at",
+].join(", ");
+
 export async function findAllProjects() {
   const db = getDb();
   const [rows] = await db.execute<(RowDataPacket & ProjectRecord)[]>(
     "SELECT * FROM projects ORDER BY created_at DESC",
+  );
+
+  return rows;
+}
+
+export async function findPublicProjects() {
+  const db = getDb();
+  const [rows] = await db.execute<(RowDataPacket & ProjectRecord)[]>(
+    `SELECT ${PUBLIC_PROJECT_FIELDS} FROM projects WHERE status = ? ORDER BY is_featured DESC, sort_order ASC, created_at DESC`,
+    ["published"],
   );
 
   return rows;
