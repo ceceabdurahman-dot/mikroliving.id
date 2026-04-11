@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { HttpError } from "../errors/httpError";
-import { loginAdmin } from "../services/authService";
+import { loginAdmin, logoutAdmin } from "../services/authService";
 import { getAdminDashboardData } from "../services/adminDashboardService";
 import {
   createContactChannel,
@@ -43,6 +43,15 @@ export async function login(req: Request, res: Response) {
   const result = await loginAdmin(validation.data.username, validation.data.password);
   if (!result) throw new HttpError(401, "Invalid credentials");
   return res.json(result);
+}
+
+export async function logout(req: Request, res: Response) {
+  if (!req.user) {
+    throw new HttpError(401, "Unauthorized");
+  }
+
+  await logoutAdmin(req.user.id);
+  return res.json({ success: true });
 }
 
 export async function getAdminDashboardHandler(req: Request, res: Response) {

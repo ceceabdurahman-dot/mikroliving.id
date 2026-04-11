@@ -32,14 +32,20 @@ export default function useAdminSessionState({
     }
   };
 
-  const handleLogout = (onConfirmLogout: () => boolean, onAfterLogout: () => void) => {
+  const handleLogout = async (onConfirmLogout: () => boolean, onAfterLogout: () => void) => {
     if (!onConfirmLogout()) {
       return;
     }
 
-    api.logout();
-    setIsAuthenticated(false);
-    onAfterLogout();
+    setBusy("loading");
+
+    try {
+      await api.logout();
+    } finally {
+      setIsAuthenticated(false);
+      onAfterLogout();
+      setBusy("idle");
+    }
   };
 
   return {

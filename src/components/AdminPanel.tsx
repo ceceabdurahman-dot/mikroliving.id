@@ -319,17 +319,23 @@ export default function AdminPanel() {
     }
   };
 
-  const handleLogout = () => {
-    api.logout();
-    setIsAuthenticated(false);
-    setDashboard(null);
-    setActiveTab("dashboard");
-    setStatusMessage("");
-    resetProjectEditor();
-    resetServiceEditor();
-    resetInsightEditor();
-    resetTestimonialEditor();
-    resetInquiryEditor();
+  const handleLogout = async () => {
+    setBusy("loading");
+
+    try {
+      await api.logout();
+    } finally {
+      setBusy("idle");
+      setIsAuthenticated(false);
+      setDashboard(null);
+      setActiveTab("dashboard");
+      setStatusMessage("");
+      resetProjectEditor();
+      resetServiceEditor();
+      resetInsightEditor();
+      resetTestimonialEditor();
+      resetInquiryEditor();
+    }
   };
 
   const saveAndRefresh = async (work: () => Promise<unknown>, successMessage: string, onDone?: () => void) => {
