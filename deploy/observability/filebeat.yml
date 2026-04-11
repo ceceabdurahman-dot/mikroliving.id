@@ -1,0 +1,42 @@
+filebeat.inputs:
+  - type: filestream
+    id: mikro-living-info
+    enabled: true
+    paths:
+      - /var/www/mikro_living/logs/app-info.log*
+    parsers:
+      - ndjson:
+          overwrite_keys: true
+          add_error_key: true
+    fields:
+      app: mikro-living
+      log_type: info
+    fields_under_root: true
+
+  - type: filestream
+    id: mikro-living-error
+    enabled: true
+    paths:
+      - /var/www/mikro_living/logs/app-error.log*
+    parsers:
+      - ndjson:
+          overwrite_keys: true
+          add_error_key: true
+    fields:
+      app: mikro-living
+      log_type: error
+    fields_under_root: true
+
+processors:
+  - add_host_metadata: ~
+  - add_fields:
+      target: service
+      fields:
+        name: mikro-living
+
+output.elasticsearch:
+  hosts: ["http://127.0.0.1:9200"]
+  index: "mikro-living-%{+yyyy.MM.dd}"
+
+setup.template.name: "mikro-living"
+setup.template.pattern: "mikro-living-*"

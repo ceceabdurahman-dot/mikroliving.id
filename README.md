@@ -26,6 +26,48 @@ Health check endpoint:
 
 `GET /api/health`
 
+## Hostinger Deployment
+
+This project supports two different Hostinger deployment targets:
+
+### 1. Full stack Node.js deployment
+
+Use this option if you want the public site, API, and `/admin` CMS to work.
+
+- Recommended Hostinger plan type: Business web hosting, Cloud hosting, or VPS with Node.js support
+- Upload method: GitHub deployment or ZIP file upload
+- Build command: `npm run build`
+- Start command: `npm start`
+- Node.js version: `22.x`
+
+Before deploying:
+
+1. Upload the full project source, not the static-only package
+2. Exclude `node_modules`, `logs`, local `.env`, and temporary artifacts
+3. Add environment variables in Hostinger:
+   `PORT`
+   `JWT_SECRET`
+   `DB_HOST`
+   `DB_USER`
+   `DB_PASSWORD`
+   `DB_NAME`
+   `CLOUDINARY_CLOUD_NAME`
+   `CLOUDINARY_API_KEY`
+   `CLOUDINARY_API_SECRET`
+4. Import the MySQL database dump before first login
+5. After deployment, test:
+   `/`
+   `/admin`
+   `/api/health`
+
+### 2. Static public-only deployment
+
+Use this only if your Hostinger plan supports static/PHP hosting but not Node.js apps.
+
+- Upload the generated static package from `migration_artifacts`
+- This will only run the public frontend
+- `/admin` and the CMS API will not work in this mode
+
 ## Required Environment Variables
 
 Use [`.env.example`](./.env.example) as the reference. The most important values are:
