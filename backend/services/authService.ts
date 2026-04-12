@@ -23,11 +23,20 @@ export async function loginAdmin(username: string, password: string) {
   const payload: AuthenticatedUser = {
     id: user.id,
     username: user.username,
+    role: user.role,
     token_version: user.token_version,
   };
 
   const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "24h" });
-  return { success: true, token };
+  return {
+    success: true,
+    token,
+    user: {
+      id: user.id,
+      username: user.username,
+      role: user.role,
+    },
+  };
 }
 
 export async function validateAuthenticatedUser(user: AuthenticatedUser) {
@@ -44,6 +53,7 @@ export async function validateAuthenticatedUser(user: AuthenticatedUser) {
   return {
     id: currentUser.id,
     username: currentUser.username,
+    role: currentUser.role,
     token_version: currentUser.token_version,
   } satisfies AuthenticatedUser;
 }

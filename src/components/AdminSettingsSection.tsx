@@ -6,6 +6,7 @@ import SiteSettingsEditor from "./SiteSettingsEditor";
 import { PasswordChangeForm } from "./adminPanelTypes";
 
 type AdminSettingsSectionProps = {
+  canManageSystemSettings: boolean;
   settingsDirty: boolean;
   settings: Record<string, string>;
   passwordForm: PasswordChangeForm;
@@ -27,6 +28,7 @@ type AdminSettingsSectionProps = {
 };
 
 export default function AdminSettingsSection({
+  canManageSystemSettings,
   settingsDirty,
   settings,
   passwordForm,
@@ -48,40 +50,53 @@ export default function AdminSettingsSection({
 }: AdminSettingsSectionProps) {
   return (
     <div className="space-y-6">
-      {settingsDirty ? (
-        <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={onDiscardChanges}
-            className="rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700"
-          >
-            Discard Changes
-          </button>
-        </div>
-      ) : null}
-      <SiteSettingsEditor
-        settings={settings}
-        onChange={onSettingsChange}
-        onSubmit={onSubmit}
-        onFormatHeroStats={onFormatHeroStats}
-        onResetDefaults={onResetDefaults}
-        disabled={busy}
-      />
       <AdminPasswordSection
         form={passwordForm}
         busy={busy}
         onFormChange={onPasswordFormChange}
         onSubmit={onPasswordSubmit}
       />
-      <NavigationContactEditor
-        navigationLinks={navigationLinks}
-        contactChannels={contactChannels}
-        onRefresh={onRefresh}
-        onMessage={onMessage}
-        onDirtyChange={onNavigationDirtyChange}
-        onDraftRestoredChange={onNavigationDraftRestoredChange}
-        onDraftAutosavedAtChange={onNavigationDraftAutosavedAtChange}
-      />
+
+      {!canManageSystemSettings ? (
+        <section className="rounded-3xl border border-amber-200 bg-amber-50 p-6 shadow-sm">
+          <h2 className="text-2xl font-headline text-stone-950">Admin-Only System Settings</h2>
+          <p className="mt-3 text-sm leading-7 text-stone-700">
+            Akun editor tetap bisa mengubah password sendiri, tetapi pengaturan hero, footer, navigation,
+            contact channel, dan manajemen user hanya tersedia untuk role admin.
+          </p>
+        </section>
+      ) : (
+        <>
+          {settingsDirty ? (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={onDiscardChanges}
+                className="rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700"
+              >
+                Discard Changes
+              </button>
+            </div>
+          ) : null}
+          <SiteSettingsEditor
+            settings={settings}
+            onChange={onSettingsChange}
+            onSubmit={onSubmit}
+            onFormatHeroStats={onFormatHeroStats}
+            onResetDefaults={onResetDefaults}
+            disabled={busy}
+          />
+          <NavigationContactEditor
+            navigationLinks={navigationLinks}
+            contactChannels={contactChannels}
+            onRefresh={onRefresh}
+            onMessage={onMessage}
+            onDirtyChange={onNavigationDirtyChange}
+            onDraftRestoredChange={onNavigationDraftRestoredChange}
+            onDraftAutosavedAtChange={onNavigationDraftAutosavedAtChange}
+          />
+        </>
+      )}
     </div>
   );
 }

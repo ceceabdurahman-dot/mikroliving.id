@@ -1,12 +1,15 @@
 import { readFileSync } from "fs";
-import cors from "cors";
-import express from "express";
+import cors, { CorsOptionsDelegate } from "cors";
+import cookieParser from "cookie-parser";
+import express, { Request } from "express";
+import helmet from "helmet";
 import path from "path";
 import { errorHandler } from "./middleware/errorHandler";
 import { apiNotFoundHandler } from "./middleware/notFound";
 import { requestId } from "./middleware/requestId";
 import { requestLogger } from "./middleware/requestLogger";
 import { createApiRouter } from "./routes/api";
+import { isTrustedRequestOrigin } from "./security/requestOrigin";
 
 function isProductionRuntime() {
   if (process.env.NODE_ENV === "production") {
@@ -20,8 +23,23 @@ function isProductionRuntime() {
 export async function createApp() {
   const app = express();
   const productionRuntime = isProductionRuntime();
+  const corsOptionsDelegate: CorsOptionsDelegate<Request> = (req, callback) => {
+    const origin = req.headers.origin;
+    callback(null, {
+      credentials: true,
+      origin: origin && isTrustedRequestOrigin(origin, req.headers.host) ? origin : false,
+    });
+  };
 
-  app.use(cors());
+  app.disable("x-powered-by");
+  app.use(
+    helmet({
+      contentSecurityPolicy: false,
+      crossOriginResourcePolicy: false,
+    }),
+  );
+  app.use(cors(corsOptionsDelegate));
+  app.use(cookieParser());
   app.use("/api", requestId);
   app.use("/api", express.json({ limit: "10mb" }));
   app.use("/api", requestLogger, createApiRouter());
