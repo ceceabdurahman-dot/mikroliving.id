@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import AdminLoginShell from "./AdminLoginShell";
 import AdminPasswordSection from "./AdminPasswordSection";
 import AdminStatusHeader from "./AdminStatusHeader";
+import AdminUsersSection from "./AdminUsersSection";
 import PendingReviewQueue from "./PendingReviewQueue";
 
 test("AdminStatusHeader renders pending badges and review shortcut", () => {
@@ -92,4 +93,59 @@ test("AdminPasswordSection renders password change guidance", () => {
   assert.match(html, /Current Password/);
   assert.match(html, /Confirm New Password/);
   assert.match(html, /signed out/i);
+});
+
+test("AdminUsersSection renders user directory and reset password state", () => {
+  const html = renderToStaticMarkup(
+    React.createElement(AdminUsersSection, {
+      editingUserId: 7,
+      editingUser: {
+        id: 7,
+        username: "editor1",
+        email: "editor1@mikroliving.store",
+        full_name: "Editor One",
+        role: "editor",
+        avatar_url: null,
+        is_active: 1,
+        last_login_at: "2026-04-12T09:00:00.000Z",
+      },
+      userDirty: true,
+      resetPasswordDirty: false,
+      userForm: {
+        username: "editor1",
+        email: "editor1@mikroliving.store",
+        full_name: "Editor One",
+        role: "editor",
+        avatar_url: "",
+        is_active: true,
+        password: "",
+        confirmPassword: "",
+      },
+      resetPasswordForm: { newPassword: "", confirmPassword: "" },
+      users: [
+        {
+          id: 1,
+          username: "admin",
+          email: "admin@mikroliving.store",
+          full_name: "Admin",
+          role: "admin",
+          avatar_url: null,
+          is_active: 1,
+          last_login_at: null,
+        },
+      ],
+      busy: "idle",
+      onDiscardChanges: () => undefined,
+      onSubmit: () => undefined,
+      onUserFormChange: () => undefined,
+      onEditUser: () => undefined,
+      onResetPasswordFormChange: () => undefined,
+      onResetPasswordSubmit: () => undefined,
+    }),
+  );
+
+  assert.match(html, /Create User|Edit User/);
+  assert.match(html, /User Directory/);
+  assert.match(html, /Reset Password/);
+  assert.match(html, /admin@mikroliving\.store/);
 });

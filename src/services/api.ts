@@ -99,6 +99,21 @@ export interface InquiryItem {
   updated_at?: string;
 }
 
+export type AdminUserRole = "admin" | "editor";
+
+export interface AdminUser {
+  id: number;
+  username: string;
+  email: string;
+  full_name?: string | null;
+  role: AdminUserRole;
+  avatar_url?: string | null;
+  is_active: number | boolean;
+  last_login_at?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface HomepageContent {
   services: ServiceItem[];
   insights: InsightItem[];
@@ -133,6 +148,10 @@ export interface AdminDashboardSummary {
   replied_inquiries: number;
   archived_inquiries: number;
   latest_inquiry_at?: string | null;
+  users_total: number;
+  active_users: number;
+  admin_users: number;
+  editor_users: number;
 }
 
 export interface AdminDashboardData {
@@ -145,10 +164,36 @@ export interface AdminDashboardData {
   navigation_links: NavigationLink[];
   contact_channels: ContactChannel[];
   inquiries: InquiryItem[];
+  users: AdminUser[];
 }
 
 export interface ChangePasswordPayload {
   currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+export interface AdminUserCreatePayload {
+  username: string;
+  email: string;
+  full_name: string;
+  role: AdminUserRole;
+  avatar_url: string;
+  is_active: boolean;
+  password: string;
+  confirmPassword: string;
+}
+
+export interface AdminUserUpdatePayload {
+  username: string;
+  email: string;
+  full_name: string;
+  role: AdminUserRole;
+  avatar_url: string;
+  is_active: boolean;
+}
+
+export interface AdminUserResetPasswordPayload {
   newPassword: string;
   confirmPassword: string;
 }
@@ -171,6 +216,10 @@ function buildFallbackDashboardData(projects: Project[], content: AdminContent):
       replied_inquiries: 0,
       archived_inquiries: 0,
       latest_inquiry_at: null,
+      users_total: 0,
+      active_users: 0,
+      admin_users: 0,
+      editor_users: 0,
     },
     projects,
     services: content.services,
@@ -180,6 +229,7 @@ function buildFallbackDashboardData(projects: Project[], content: AdminContent):
     navigation_links: content.navigation_links,
     contact_channels: content.contact_channels,
     inquiries: [],
+    users: [],
   };
 }
 
@@ -192,17 +242,47 @@ const clearAdminSession = () => {
   localStorage.removeItem(ADMIN_TOKEN_KEY);
 };
 
+type ApiError = Error & { status?: number };
+
+function extractApiError(error: unknown) {
+  if (!axios.isAxiosError(error)) {
+    return error instanceof Error ? error.message : "Request failed.";
+  }
+
+  const payload = error.response?.data;
+  if (payload && typeof payload === "object" && "error" in payload && typeof payload.error === "string") {
+    return payload.error;
+  }
+
+  return error.message || "Request failed.";
+}
+
+async function withApiError<T>(request: Promise<{ data: T }>): Promise<T> {
+  try {
+    const response = await request;
+    return response.data;
+  } catch (error) {
+    const apiError = new Error(extractApiError(error)) as ApiError;
+    if (axios.isAxiosError(error)) {
+      apiError.status = error.response?.status;
+    }
+    throw apiError;
+  }
+}
+
 export const api = {
   getHomepage: async (): Promise<HomepageContent> => (await axios.get(`${API_BASE_URL}/homepage`)).data,
   getProjects: async (): Promise<Project[]> => (await axios.get(`${API_BASE_URL}/projects`)).data,
   submitInquiry: async (data: { name: string; email: string; phone?: string; message: string }) =>
     (await axios.post(`${API_BASE_URL}/contact`, data)).data,
   login: async (credentials: { username: string; password: string }) => {
-    const response = await axios.post(`${API_BASE_URL}/admin/login`, credentials);
-    if (response.data.token) {
-      localStorage.setItem(ADMIN_TOKEN_KEY, response.data.token);
+    const response = await withApiError<{ token?: string } & Record<string, unknown>>(
+      axios.post(`${API_BASE_URL}/admin/login`, credentials),
+    );
+    if (response.token) {
+      localStorage.setItem(ADMIN_TOKEN_KEY, response.token);
     }
-    return response.data;
+    return response;
   },
   hasAdminSession: () => Boolean(localStorage.getItem(ADMIN_TOKEN_KEY)),
   logout: async () => {
@@ -210,7 +290,7 @@ export const api = {
 
     try {
       if (headers.Authorization) {
-        await axios.post(`${API_BASE_URL}/admin/logout`, null, { headers });
+        await withApiError(axios.post(`${API_BASE_URL}/admin/logout`, null, { headers }));
       }
     } finally {
       clearAdminSession();
@@ -218,12 +298,12 @@ export const api = {
   },
   clearAdminSession,
   changePassword: async (payload: ChangePasswordPayload) =>
-    (await axios.post(`${API_BASE_URL}/admin/change-password`, payload, { headers: getAuthHeader() })).data,
+    withApiError(axios.post(`${API_BASE_URL}/admin/change-password`, payload, { headers: getAuthHeader() })),
   getAdminDashboard: async (): Promise<AdminDashboardData> => {
     try {
-      return (await axios.get(`${API_BASE_URL}/admin/dashboard`, { headers: getAuthHeader() })).data;
+      return await withApiError(axios.get<AdminDashboardData>(`${API_BASE_URL}/admin/dashboard`, { headers: getAuthHeader() }));
     } catch (error) {
-      if (!axios.isAxiosError(error) || error.response?.status !== 404) {
+      if (!error || typeof error !== "object" || (error as ApiError).status !== 404) {
         throw error;
       }
 
@@ -237,6 +317,16 @@ export const api = {
   },
   getAdminContent: async (): Promise<AdminContent> =>
     (await axios.get(`${API_BASE_URL}/admin/content`, { headers: getAuthHeader() })).data,
+  getAdminUsers: async (): Promise<AdminUser[]> =>
+    withApiError(axios.get<AdminUser[]>(`${API_BASE_URL}/admin/users`, { headers: getAuthHeader() })),
+  createAdminUser: async (payload: AdminUserCreatePayload) =>
+    withApiError(axios.post(`${API_BASE_URL}/admin/users`, payload, { headers: getAuthHeader() })),
+  updateAdminUser: async (id: number, payload: AdminUserUpdatePayload) =>
+    withApiError(axios.put(`${API_BASE_URL}/admin/users/${id}`, payload, { headers: getAuthHeader() })),
+  resetAdminUserPassword: async (id: number, payload: AdminUserResetPasswordPayload) =>
+    withApiError(
+      axios.post(`${API_BASE_URL}/admin/users/${id}/reset-password`, payload, { headers: getAuthHeader() }),
+    ),
   createProject: async (payload: Omit<Project, "id">) =>
     (await axios.post(`${API_BASE_URL}/admin/projects`, payload, { headers: getAuthHeader() })).data,
   updateProject: async (id: number, payload: Partial<Project>) =>

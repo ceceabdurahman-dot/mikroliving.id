@@ -6,6 +6,7 @@ import {
   createProjectHandler,
   createServiceHandler,
   createTestimonialHandler,
+  createAdminUserHandler,
   changePassword,
   deleteContactChannelHandler,
   deleteInsightHandler,
@@ -16,8 +17,10 @@ import {
   deleteTestimonialHandler,
   getAdminContentHandler,
   getAdminDashboardHandler,
+  getAdminUsersHandler,
   login,
   logout,
+  resetAdminUserPasswordHandler,
   updateContactChannelHandler,
   updateInsightHandler,
   updateInquiryHandler,
@@ -26,6 +29,7 @@ import {
   updateServiceHandler,
   updateSiteSettingsHandler,
   updateTestimonialHandler,
+  updateAdminUserHandler,
   uploadImage,
 } from "../controllers/adminController";
 import { asyncHandler } from "../middleware/asyncHandler";
@@ -44,6 +48,10 @@ export function createAdminRoutes() {
   router.post("/change-password", authenticateToken, adminWriteLimiter, asyncHandler(changePassword));
   router.get("/dashboard", authenticateToken, asyncHandler(getAdminDashboardHandler));
   router.get("/content", authenticateToken, asyncHandler(getAdminContentHandler));
+  router.get("/users", authenticateToken, asyncHandler(getAdminUsersHandler));
+  router.post("/users", authenticateToken, adminWriteLimiter, asyncHandler(createAdminUserHandler));
+  router.put("/users/:id", authenticateToken, adminWriteLimiter, asyncHandler(updateAdminUserHandler));
+  router.post("/users/:id/reset-password", authenticateToken, adminWriteLimiter, asyncHandler(resetAdminUserPasswordHandler));
   router.post("/projects", authenticateToken, adminWriteLimiter, asyncHandler(createProjectHandler));
   router.put("/projects/:id", authenticateToken, adminWriteLimiter, asyncHandler(updateProjectHandler));
   router.delete("/projects/:id", authenticateToken, adminWriteLimiter, asyncHandler(deleteProjectHandler));

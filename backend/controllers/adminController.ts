@@ -25,6 +25,12 @@ import { deleteInquiry, updateInquiry } from "../services/inquiryService";
 import { createProject, deleteProject, updateProject } from "../services/projectService";
 import { uploadProjectImage } from "../services/mediaService";
 import {
+  createAdminUser,
+  getAdminUsers,
+  resetAdminUserPassword,
+  updateAdminUser,
+} from "../services/userService";
+import {
   parseProjectId,
   validateChangePasswordPayload,
   validateImageUploadPayload,
@@ -41,6 +47,45 @@ import {
 } from "../validators/cmsValidator";
 import { validateInquiryPayload } from "../validators/inquiryValidator";
 import { validateProjectPayload } from "../validators/projectValidator";
+import {
+  parseUserId,
+  validateCreateUserPayload,
+  validateResetUserPasswordPayload,
+  validateUpdateUserPayload,
+} from "../validators/userValidator";
+
+function throwForUserMutationResult(
+  result:
+    | { status: "success"; id?: number }
+    | { status: "not_found" }
+    | { status: "duplicate_username" }
+    | { status: "duplicate_email" }
+    | { status: "cannot_deactivate_self" }
+    | { status: "cannot_change_own_role" }
+    | { status: "cannot_reset_self" }
+    | { status: "last_active_admin" },
+) {
+  switch (result.status) {
+    case "success":
+      return result.id ?? null;
+    case "not_found":
+      throw new HttpError(404, "User not found.");
+    case "duplicate_username":
+      throw new HttpError(409, "Username is already in use.");
+    case "duplicate_email":
+      throw new HttpError(409, "Email is already in use.");
+    case "cannot_deactivate_self":
+      throw new HttpError(400, "You cannot deactivate your own account.");
+    case "cannot_change_own_role":
+      throw new HttpError(400, "You cannot change your own role.");
+    case "cannot_reset_self":
+      throw new HttpError(400, "Use Change Password to update your own password.");
+    case "last_active_admin":
+      throw new HttpError(400, "At least one active admin must remain.");
+    default:
+      throw new HttpError(500, "Unexpected user mutation result.");
+  }
+}
 
 export async function login(req: Request, res: Response) {
   const validation = validateLoginPayload(req.body);
@@ -95,6 +140,51 @@ export async function getAdminDashboardHandler(req: Request, res: Response) {
 
 export async function getAdminContentHandler(req: Request, res: Response) {
   return res.json(await getAdminContent());
+}
+
+export async function getAdminUsersHandler(req: Request, res: Response) {
+  void req;
+  return res.json(await getAdminUsers());
+}
+
+export async function createAdminUserHandler(req: Request, res: Response) {
+  const validation = validateCreateUserPayload(req.body);
+  if (!validation.valid) throw new HttpError(400, validation.error);
+  const id = throwForUserMutationResult(await createAdminUser(validation.data));
+  return res.json({ success: true, id });
+}
+
+export async function updateAdminUserHandler(req: Request, res: Response) {
+  if (!req.user) {
+    throw new HttpError(401, "Unauthorized");
+  }
+
+  const idValidation = parseUserId(req.params.id);
+  if (!idValidation.valid) throw new HttpError(400, idValidation.error);
+
+  const validation = validateUpdateUserPayload(req.body);
+  if (!validation.valid) throw new HttpError(400, validation.error);
+
+  throwForUserMutationResult(await updateAdminUser(req.user.id, idValidation.data, validation.data));
+  return res.json({ success: true });
+}
+
+export async function resetAdminUserPasswordHandler(req: Request, res: Response) {
+  if (!req.user) {
+    throw new HttpError(401, "Unauthorized");
+  }
+
+  const idValidation = parseUserId(req.params.id);
+  if (!idValidation.valid) throw new HttpError(400, idValidation.error);
+
+  const validation = validateResetUserPasswordPayload(req.body);
+  if (!validation.valid) throw new HttpError(400, validation.error);
+
+  throwForUserMutationResult(
+    await resetAdminUserPassword(req.user.id, idValidation.data, validation.data),
+  );
+
+  return res.json({ success: true });
 }
 
 export async function createProjectHandler(req: Request, res: Response) {
