@@ -1,5 +1,6 @@
 import { motion } from "motion/react";
 import { ArrowUpRight } from "lucide-react";
+import { resolveContactHref } from "./publicSiteUtils";
 
 type HeroProps = {
   settings?: Record<string, string>;
@@ -31,6 +32,7 @@ function parseStats(value?: string) {
 
 export default function Hero({ settings }: HeroProps) {
   const stats = parseStats(settings?.hero_stats);
+  const currentPath = typeof window !== "undefined" ? window.location.pathname : "/";
 
   return (
     <section id="home" className="relative min-h-[90vh] flex items-center overflow-hidden px-4 pt-28 pb-10 sm:px-6 lg:px-8">
@@ -50,14 +52,14 @@ export default function Hero({ settings }: HeroProps) {
           </p>
           <div className="flex flex-wrap gap-4">
             <a
-              href="#portfolio"
+              href="/projects"
               className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-on-primary px-6 sm:px-8 py-4 rounded-lg font-bold flex items-center justify-center gap-2 transition-all duration-300"
             >
               {settings?.hero_primary_cta_label ?? "View Portfolio"}
               <ArrowUpRight className="w-5 h-5" />
             </a>
             <a
-              href="#contact"
+              href={resolveContactHref(currentPath)}
               className="w-full sm:w-auto border border-outline-variant/20 hover:bg-stone-50 text-primary px-6 sm:px-8 py-4 rounded-lg font-bold text-center transition-all duration-300"
             >
               {settings?.hero_secondary_cta_label ?? "Book Consultation"}

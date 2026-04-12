@@ -3,6 +3,7 @@ import { Menu, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { NavigationLink } from "../services/api";
 import BrandMark from "./BrandMark";
+import { resolveBrandHref, resolveContactHref, resolveNavigationHref } from "./publicSiteUtils";
 
 type NavbarProps = {
   brandName?: string;
@@ -20,11 +21,13 @@ const fallbackNavItems = [
 
 export default function Navbar({ brandName = "MikroLiving", navigationLinks }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const currentPath = typeof window !== "undefined" ? window.location.pathname : "/";
 
   const navItems = useMemo(() => {
     const items = (navigationLinks ?? fallbackNavItems).filter((item) => item.location === "header");
     return items.length > 0 ? items : fallbackNavItems;
   }, [navigationLinks]);
+  const contactHref = resolveContactHref(currentPath);
 
   return (
     <motion.nav
@@ -35,26 +38,38 @@ export default function Navbar({ brandName = "MikroLiving", navigationLinks }: N
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
-          <a href="#home" className="shrink-0">
+          <a href={resolveBrandHref(currentPath)} className="shrink-0">
             <BrandMark brandName={brandName} size="sm" />
           </a>
           <div className="hidden md:flex items-center gap-8">
             {navItems.map((item, idx) => (
-              <a
-                key={`${item.label}-${item.url}`}
-                href={item.url}
-                className={
-                  idx === 0
-                    ? "text-primary border-b-2 border-primary pb-1 text-sm font-medium tracking-wide transition-all duration-300"
-                    : "text-stone-600 hover:text-stone-900 text-sm font-medium tracking-wide transition-all duration-300"
-                }
-              >
-                {item.label}
-              </a>
+              (() => {
+                const href = resolveNavigationHref(item.url, item.label, currentPath);
+                const isActive =
+                  (href === "/projects" && currentPath.startsWith("/projects"))
+                  || (href === "/insights" && currentPath.startsWith("/insights"))
+                  || (href === "/privacy-policy" && currentPath === "/privacy-policy")
+                  || (href === "/terms-of-service" && currentPath === "/terms-of-service")
+                  || (idx === 0 && currentPath === "/");
+
+                return (
+                  <a
+                    key={`${item.label}-${item.url}`}
+                    href={href}
+                    className={
+                      isActive
+                        ? "text-primary border-b-2 border-primary pb-1 text-sm font-medium tracking-wide transition-all duration-300"
+                        : "text-stone-600 hover:text-stone-900 text-sm font-medium tracking-wide transition-all duration-300"
+                    }
+                  >
+                    {item.label}
+                  </a>
+                );
+              })()
             ))}
           </div>
           <a
-            href="#contact"
+            href={contactHref}
             className="hidden md:inline-flex bg-primary hover:bg-primary/90 text-on-primary px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 active:scale-95"
           >
             Book Consultation
@@ -76,7 +91,7 @@ export default function Navbar({ brandName = "MikroLiving", navigationLinks }: N
               {navItems.map((item) => (
                 <a
                   key={`${item.label}-${item.url}`}
-                  href={item.url}
+                  href={resolveNavigationHref(item.url, item.label, currentPath)}
                   className="rounded-lg px-3 py-3 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50 hover:text-stone-900"
                   onClick={() => setIsOpen(false)}
                 >
@@ -84,7 +99,7 @@ export default function Navbar({ brandName = "MikroLiving", navigationLinks }: N
                 </a>
               ))}
               <a
-                href="#contact"
+                href={contactHref}
                 className="mt-2 inline-flex items-center justify-center rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-on-primary transition-colors hover:bg-primary/90"
                 onClick={() => setIsOpen(false)}
               >

@@ -22,10 +22,12 @@ import {
   findAllContactChannels,
   findAllInsights,
   findAllNavigationLinks,
+  findPublishedInsights,
   findAllServices,
   findAllTestimonials,
   findFeaturedTestimonial,
   findPublicContactChannels,
+  findPublicInsightBySlug,
   findPublicInsights,
   findPublicNavigationLinks,
   findPublicServices,
@@ -131,6 +133,21 @@ export async function getAdminContent() {
   ]);
 
   return { services, insights, testimonials, settings, navigation_links, contact_channels };
+}
+
+export async function getPublishedInsights() {
+  const insights = await findPublishedInsights();
+  return insights.length > 0 ? insights : defaultInsights;
+}
+
+export async function getPublishedInsightBySlug(slug: string) {
+  const insight = await findPublicInsightBySlug(slug);
+
+  if (insight) {
+    return insight;
+  }
+
+  return defaultInsights.find((item) => item.slug === slug) ?? null;
 }
 
 export async function createService(payload: ServicePayload) { return insertService(payload); }

@@ -44,7 +44,7 @@ export default function Insights({ items }: InsightsProps) {
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-12 sm:mb-16">
           <h2 className="text-3xl sm:text-4xl font-headline">Latest Insights</h2>
-          <a href="#" className="text-primary font-bold flex items-center gap-2 group">
+          <a href="/insights" className="text-primary font-bold flex items-center gap-2 group">
             Explore Blog
             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </a>
@@ -59,18 +59,22 @@ export default function Insights({ items }: InsightsProps) {
               transition={{ delay: idx * 0.1 }}
               className="group"
             >
-              <div className="aspect-video rounded-xl overflow-hidden mb-6 bg-stone-100">
-                <img
-                  src={item.image_url ?? "https://picsum.photos/seed/blog-fallback/600/400"}
-                  alt={item.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  referrerPolicy="no-referrer"
-                />
-              </div>
+              <a href={`/insights/${item.slug}`} className="block">
+                <div className="aspect-video rounded-xl overflow-hidden mb-6 bg-stone-100">
+                  <img
+                    src={item.image_url ?? "https://picsum.photos/seed/blog-fallback/600/400"}
+                    alt={item.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
+              </a>
               <span className="text-xs font-bold text-primary uppercase tracking-widest">{item.tag}</span>
-              <h4 className="text-xl font-headline mt-2 mb-4 group-hover:text-primary transition-colors">{item.title}</h4>
+              <a href={`/insights/${item.slug}`} className="block">
+                <h4 className="text-xl font-headline mt-2 mb-4 group-hover:text-primary transition-colors">{item.title}</h4>
+              </a>
               <p className="text-on-surface-variant text-sm line-clamp-2 mb-4">{item.excerpt}</p>
-              <a href="#" className="text-sm font-bold border-b-2 border-primary/20 pb-1 hover:border-primary transition-colors">
+              <a href={`/insights/${item.slug}`} className="text-sm font-bold border-b-2 border-primary/20 pb-1 hover:border-primary transition-colors">
                 Read More
               </a>
             </motion.article>

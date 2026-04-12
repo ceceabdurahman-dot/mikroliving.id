@@ -2,6 +2,7 @@ import { logger } from "../utils/logger";
 import { ProjectPayload } from "../types/project";
 import {
   deleteProjectById,
+  findPublicProjectById,
   findPublicProjects,
   insertProject,
   updateProjectById,
@@ -12,6 +13,15 @@ export async function getProjects() {
     return await findPublicProjects();
   } catch (error) {
     logger.error("public_projects_fetch_failed", { error });
+    throw error;
+  }
+}
+
+export async function getProjectById(projectId: number) {
+  try {
+    return await findPublicProjectById(projectId);
+  } catch (error) {
+    logger.error("public_project_fetch_failed", { error, projectId });
     throw error;
   }
 }

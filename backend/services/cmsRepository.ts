@@ -51,6 +51,23 @@ export async function findPublicInsights() {
   return rows;
 }
 
+export async function findPublishedInsights() {
+  const db = getDb();
+  const [rows] = await db.execute<(RowDataPacket & InsightRecord)[]>(
+    "SELECT * FROM insights WHERE is_published = 1 ORDER BY sort_order ASC, published_at DESC, id DESC",
+  );
+  return rows;
+}
+
+export async function findPublicInsightBySlug(slug: string) {
+  const db = getDb();
+  const [rows] = await db.execute<(RowDataPacket & InsightRecord)[]>(
+    "SELECT * FROM insights WHERE slug = ? AND is_published = 1 LIMIT 1",
+    [slug],
+  );
+  return rows[0] ?? null;
+}
+
 export async function findAllInsights() {
   const db = getDb();
   const [rows] = await db.execute<(RowDataPacket & InsightRecord)[]>("SELECT * FROM insights ORDER BY sort_order ASC, published_at DESC, id DESC");
