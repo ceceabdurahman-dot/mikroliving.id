@@ -1,4 +1,14 @@
-export type UserRole = "admin" | "editor";
+export const USER_ROLE_VALUES = ["superadmin", "admin", "editor"] as const;
+
+export type UserRole = (typeof USER_ROLE_VALUES)[number];
+
+export function isUserRole(value: unknown): value is UserRole {
+  return typeof value === "string" && USER_ROLE_VALUES.includes(value as UserRole);
+}
+
+export function isPrivilegedUserRole(role: UserRole) {
+  return role === "superadmin" || role === "admin";
+}
 
 export type UserRecord = {
   id: number;

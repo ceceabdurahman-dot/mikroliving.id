@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import { AUTH_COOKIE, JWT_SECRET } from "../config/env";
 import { validateAuthenticatedUser } from "../services/authService";
 import { AuthenticatedUser } from "../types/auth";
-import { UserRole } from "../types/user";
+import { isUserRole, UserRole } from "../types/user";
 
 declare module "express-serve-static-core" {
   interface Request {
@@ -20,7 +20,7 @@ function isAuthenticatedUser(value: unknown): value is AuthenticatedUser {
 
   return Number.isInteger(user.id)
     && typeof user.username === "string"
-    && (user.role === "admin" || user.role === "editor")
+    && isUserRole(user.role)
     && Number.isInteger(user.token_version);
 }
 
@@ -79,4 +79,4 @@ export function requireRole(...allowedRoles: UserRole[]) {
   };
 }
 
-export const requireAdmin = requireRole("admin");
+export const requireAdmin = requireRole("superadmin", "admin");

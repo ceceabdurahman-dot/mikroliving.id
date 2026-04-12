@@ -61,7 +61,7 @@ export default function AdminUsersSection({
             <div>
               <h2 className="text-2xl font-headline">{editingUserId ? "Edit User" : "Create User"}</h2>
               <p className="mt-2 text-sm leading-6 text-stone-600">
-                Tambahkan admin atau editor baru, lalu atur status aktif dan profil singkatnya dari satu form.
+                Tambahkan superadmin, admin, atau editor baru, lalu atur status aktif dan profil singkatnya dari satu form.
               </p>
             </div>
             <div className="flex gap-3">
@@ -142,6 +142,7 @@ export default function AdminUsersSection({
               >
                 <option value="editor">Editor</option>
                 <option value="admin">Admin</option>
+                <option value="superadmin">Superadmin</option>
               </select>
             </div>
 
@@ -284,7 +285,11 @@ export default function AdminUsersSection({
                     </h3>
                     <span
                       className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                        user.role === "admin" ? "bg-amber-100 text-amber-700" : "bg-sky-100 text-sky-700"
+                        user.role === "superadmin"
+                          ? "bg-rose-100 text-rose-700"
+                          : user.role === "admin"
+                            ? "bg-amber-100 text-amber-700"
+                            : "bg-sky-100 text-sky-700"
                       }`}
                     >
                       {user.role}

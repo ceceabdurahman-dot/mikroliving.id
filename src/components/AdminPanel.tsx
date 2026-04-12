@@ -206,8 +206,8 @@ export default function AdminPanel() {
   const [userResetPasswordForm, setUserResetPasswordForm] =
     useState<UserResetPasswordForm>(emptyUserResetPasswordForm);
   const currentUserRole = dashboard?.current_user?.role ?? "admin";
-  const canManageUsers = currentUserRole === "admin";
-  const canManageSystemSettings = currentUserRole === "admin";
+  const canManageUsers = currentUserRole === "admin" || currentUserRole === "superadmin";
+  const canManageSystemSettings = canManageUsers;
 
   const pushToast = useCallback((message: string, tone: ToastItem["tone"] = "success") => {
     const id = Date.now() + Math.floor(Math.random() * 1000);
@@ -786,11 +786,11 @@ export default function AdminPanel() {
                   {activeTab === "dashboard"
                     ? "Lihat ringkasan performa konten publik dan alur lead masuk, lalu lompat ke fitur yang perlu dirapikan hari ini."
                     : activeTab === "users"
-                      ? "Kelola akun admin dan editor, atur role, status aktif, dan reset password user yang perlu dipulihkan."
+                      ? "Kelola akun superadmin, admin, dan editor, atur role, status aktif, dan reset password user yang perlu dipulihkan."
                     : activeTab === "settings"
                       ? canManageSystemSettings
                         ? "Kelola hero, footer, navigation, dan contact channel agar seluruh struktur halaman depan tetap sinkron."
-                        : "Ubah password akun Anda dari sini. Pengaturan sistem dan konfigurasi CMS hanya tersedia untuk admin."
+                        : "Ubah password akun Anda dari sini. Pengaturan sistem dan konfigurasi CMS hanya tersedia untuk admin atau superadmin."
                       : activeTab === "inquiries"
                         ? "Buka inquiry untuk melihat detail lead, memperbarui status follow-up, dan menyimpan catatan internal tim."
                         : "Setiap item di fitur ini bisa dibuka, diedit, dihapus, dan disimpan langsung dari satu workspace."}

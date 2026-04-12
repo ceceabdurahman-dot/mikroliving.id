@@ -124,7 +124,7 @@ function throwForUserMutationResult(
     case "cannot_reset_self":
       throw new HttpError(400, "Use Change Password to update your own password.");
     case "last_active_admin":
-      throw new HttpError(400, "At least one active admin must remain.");
+      throw new HttpError(400, "At least one active admin or superadmin must remain.");
     default:
       throw new HttpError(500, "Unexpected user mutation result.");
   }

@@ -3,6 +3,7 @@ import { getAdminInquiries } from "./inquiryService";
 import { findAllProjects } from "./projectRepository";
 import { getAdminUsers } from "./userService";
 import { AuthenticatedUser } from "../types/auth";
+import { isPrivilegedUserRole } from "../types/user";
 
 export async function getAdminDashboardData(viewer: AuthenticatedUser) {
   const [projects, content, inquiries, users] = await Promise.all([
@@ -11,7 +12,7 @@ export async function getAdminDashboardData(viewer: AuthenticatedUser) {
     getAdminInquiries(),
     getAdminUsers(),
   ]);
-  const canManageUsers = viewer.role === "admin";
+  const canManageUsers = isPrivilegedUserRole(viewer.role);
   const visibleUsers = canManageUsers ? users : [];
 
   return {
@@ -39,6 +40,7 @@ export async function getAdminDashboardData(viewer: AuthenticatedUser) {
       users_total: canManageUsers ? users.length : 0,
       active_users: canManageUsers ? users.filter((item) => Boolean(item.is_active)).length : 0,
       admin_users: canManageUsers ? users.filter((item) => item.role === "admin").length : 0,
+      superadmin_users: canManageUsers ? users.filter((item) => item.role === "superadmin").length : 0,
       editor_users: canManageUsers ? users.filter((item) => item.role === "editor").length : 0,
     },
     projects,

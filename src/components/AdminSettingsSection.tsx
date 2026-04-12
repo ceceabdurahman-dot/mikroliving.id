@@ -59,10 +59,10 @@ export default function AdminSettingsSection({
 
       {!canManageSystemSettings ? (
         <section className="rounded-3xl border border-amber-200 bg-amber-50 p-6 shadow-sm">
-          <h2 className="text-2xl font-headline text-stone-950">Admin-Only System Settings</h2>
+          <h2 className="text-2xl font-headline text-stone-950">Restricted System Settings</h2>
           <p className="mt-3 text-sm leading-7 text-stone-700">
             Akun editor tetap bisa mengubah password sendiri, tetapi pengaturan hero, footer, navigation,
-            contact channel, dan manajemen user hanya tersedia untuk role admin.
+            contact channel, dan manajemen user hanya tersedia untuk role admin atau superadmin.
           </p>
         </section>
       ) : (

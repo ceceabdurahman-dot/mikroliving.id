@@ -10,7 +10,11 @@ export async function findAllUsers() {
   const [rows] = await db.execute<UserRow[]>(
     `SELECT id, username, email, full_name, role, avatar_url, is_active, last_login_at, created_at, updated_at
      FROM users
-     ORDER BY role = 'admin' DESC, is_active DESC, username ASC`,
+     ORDER BY CASE role
+       WHEN 'superadmin' THEN 2
+       WHEN 'admin' THEN 1
+       ELSE 0
+     END DESC, is_active DESC, username ASC`,
   );
 
   return rows;
@@ -29,10 +33,10 @@ export async function findUserById(userId: number) {
   return rows[0] ?? null;
 }
 
-export async function countActiveAdmins() {
+export async function countActivePrivilegedUsers() {
   const db = getDb();
   const [rows] = await db.execute<CountRow[]>(
-    "SELECT COUNT(*) AS total FROM users WHERE role = 'admin' AND is_active = 1",
+    "SELECT COUNT(*) AS total FROM users WHERE role IN ('superadmin', 'admin') AND is_active = 1",
   );
 
   return Number(rows[0]?.total ?? 0);

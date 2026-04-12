@@ -99,7 +99,7 @@ export interface InquiryItem {
   updated_at?: string;
 }
 
-export type AdminUserRole = "admin" | "editor";
+export type AdminUserRole = "superadmin" | "admin" | "editor";
 
 export interface AdminUser {
   id: number;
@@ -151,6 +151,7 @@ export interface AdminDashboardSummary {
   users_total: number;
   active_users: number;
   admin_users: number;
+  superadmin_users: number;
   editor_users: number;
 }
 
@@ -236,6 +237,7 @@ function buildFallbackDashboardData(projects: Project[], content: AdminContent):
       users_total: 0,
       active_users: 0,
       admin_users: 0,
+      superadmin_users: 0,
       editor_users: 0,
     },
     projects,
