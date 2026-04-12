@@ -1,3 +1,4 @@
+import { readFileSync } from "fs";
 import cors from "cors";
 import express from "express";
 import path from "path";
@@ -35,9 +36,24 @@ export async function createApp() {
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), "dist");
+    const indexPath = path.join(distPath, "index.html");
+    const indexHtml = readFileSync(indexPath, "utf8");
     app.use(express.static(distPath));
-    app.get("/{*path}", (req, res) => {
-      res.sendFile(path.join(distPath, "index.html"));
+
+    // Serve the SPA shell for client-side routes like /admin while keeping
+    // real asset/file misses available for normal 404 handling.
+    app.use((req, res, next) => {
+      if (req.method !== "GET") {
+        next();
+        return;
+      }
+
+      if (path.extname(req.path)) {
+        next();
+        return;
+      }
+
+      res.type("html").send(indexHtml);
     });
   }
 
