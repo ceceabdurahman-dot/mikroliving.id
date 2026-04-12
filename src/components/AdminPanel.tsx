@@ -14,6 +14,7 @@ import {
   categories,
   emptyInquiryForm,
   emptyInsightForm,
+  emptyPasswordChangeForm,
   emptyProjectForm,
   emptyServiceForm,
   emptyTestimonialForm,
@@ -22,7 +23,9 @@ import {
   type BusyState,
   type InquiryForm,
   type InsightForm,
+  type LoginMessageTone,
   type LoginForm,
+  type PasswordChangeForm,
   type ProjectForm,
   type ServiceForm,
   type TabKey,
@@ -40,7 +43,7 @@ import {
   api,
 } from "../services/api";
 
-const initialLoginForm: LoginForm = { username: "admin", password: "admin123" };
+const initialLoginForm: LoginForm = { username: "", password: "" };
 
 function readFileAsDataUrl(file: File) {
   return new Promise<string>((resolve, reject) => {
@@ -151,6 +154,7 @@ export default function AdminPanel() {
   const [dashboardLoadError, setDashboardLoadError] = useState("");
   const [loginForm, setLoginForm] = useState<LoginForm>(initialLoginForm);
   const [loginMessage, setLoginMessage] = useState("");
+  const [loginMessageTone, setLoginMessageTone] = useState<LoginMessageTone>("error");
   const [statusMessage, setStatusMessage] = useState("");
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
@@ -176,6 +180,7 @@ export default function AdminPanel() {
 
   const [settingsForm, setSettingsForm] = useState<Record<string, string>>(defaultEditableSiteSettings);
   const [settingsBase, setSettingsBase] = useState<Record<string, string>>(defaultEditableSiteSettings);
+  const [passwordForm, setPasswordForm] = useState<PasswordChangeForm>(emptyPasswordChangeForm);
 
   const pushToast = useCallback((message: string, tone: ToastItem["tone"] = "success") => {
     const id = Date.now() + Math.floor(Math.random() * 1000);
@@ -263,6 +268,10 @@ export default function AdminPanel() {
     setInquiryBase(emptyInquiryForm);
   }, []);
 
+  const resetPasswordForm = useCallback(() => {
+    setPasswordForm(emptyPasswordChangeForm);
+  }, []);
+
   const uploadImage = useCallback(
     async (
       event: ChangeEvent<HTMLInputElement>,
@@ -292,12 +301,15 @@ export default function AdminPanel() {
     try {
       setBusy("loading");
       setLoginMessage("");
+      setLoginMessageTone("error");
       await api.login(loginForm);
       setIsAuthenticated(true);
+      setLoginForm(initialLoginForm);
       pushToast("Admin session started.");
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Login failed.";
       setLoginMessage(message);
+      setLoginMessageTone("error");
       pushToast(message, "error");
     } finally {
       setBusy("idle");
@@ -335,6 +347,7 @@ export default function AdminPanel() {
       resetInsightEditor();
       resetTestimonialEditor();
       resetInquiryEditor();
+      resetPasswordForm();
     }
   };
 
@@ -435,6 +448,35 @@ export default function AdminPanel() {
     return saveAndRefresh(() => api.updateSiteSettings(payload), "Site settings updated.");
   };
 
+  const handlePasswordSubmit = async (event: FormEvent) => {
+    event.preventDefault();
+
+    try {
+      setBusy("saving");
+      await api.changePassword(passwordForm);
+      api.clearAdminSession();
+      setLoginForm(initialLoginForm);
+      setLoginMessage("Password updated. Please sign in again with your new password.");
+      setLoginMessageTone("success");
+      setIsAuthenticated(false);
+      setDashboard(null);
+      setActiveTab("dashboard");
+      setStatusMessage("");
+      resetProjectEditor();
+      resetServiceEditor();
+      resetInsightEditor();
+      resetTestimonialEditor();
+      resetInquiryEditor();
+      resetPasswordForm();
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Password update failed.";
+      setStatusMessage(message);
+      pushToast(message, "error");
+    } finally {
+      setBusy("idle");
+    }
+  };
+
   const handleFormatHeroStats = () => {
     try {
       const parsed = JSON.parse(settingsForm.hero_stats || "[]");
@@ -512,7 +554,16 @@ export default function AdminPanel() {
   };
 
   if (!isAuthenticated) {
-    return <AdminLoginShell busy={busy !== "idle"} loginForm={loginForm} loginMessage={loginMessage} onSubmit={handleLogin} onLoginFormChange={setLoginForm} />;
+    return (
+      <AdminLoginShell
+        busy={busy !== "idle"}
+        loginForm={loginForm}
+        loginMessage={loginMessage}
+        loginMessageTone={loginMessageTone}
+        onSubmit={handleLogin}
+        onLoginFormChange={setLoginForm}
+      />
+    );
   }
 
   const data = dashboard;
@@ -699,11 +750,14 @@ export default function AdminPanel() {
             <AdminSettingsSection
               settingsDirty={settingsDirty}
               settings={settingsForm}
+              passwordForm={passwordForm}
               navigationLinks={data.navigation_links}
               contactChannels={data.contact_channels}
               busy={busy !== "idle"}
               onDiscardChanges={() => setSettingsForm(settingsBase)}
               onSettingsChange={(key, value) => setSettingsForm((current) => ({ ...current, [key]: value }))}
+              onPasswordFormChange={setPasswordForm}
+              onPasswordSubmit={handlePasswordSubmit}
               onSubmit={handleSettingsSubmit}
               onFormatHeroStats={handleFormatHeroStats}
               onResetDefaults={handleResetDefaults}

@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { HttpError } from "../errors/httpError";
-import { loginAdmin, logoutAdmin } from "../services/authService";
+import { changeAdminPassword, loginAdmin, logoutAdmin } from "../services/authService";
 import { getAdminDashboardData } from "../services/adminDashboardService";
 import {
   createContactChannel,
@@ -24,7 +24,12 @@ import {
 import { deleteInquiry, updateInquiry } from "../services/inquiryService";
 import { createProject, deleteProject, updateProject } from "../services/projectService";
 import { uploadProjectImage } from "../services/mediaService";
-import { parseProjectId, validateImageUploadPayload, validateLoginPayload } from "../validators/authValidator";
+import {
+  parseProjectId,
+  validateChangePasswordPayload,
+  validateImageUploadPayload,
+  validateLoginPayload,
+} from "../validators/authValidator";
 import {
   parseCmsEntityId,
   validateContactChannelPayload,
@@ -52,6 +57,36 @@ export async function logout(req: Request, res: Response) {
 
   await logoutAdmin(req.user.id);
   return res.json({ success: true });
+}
+
+export async function changePassword(req: Request, res: Response) {
+  if (!req.user) {
+    throw new HttpError(401, "Unauthorized");
+  }
+
+  const validation = validateChangePasswordPayload(req.body);
+  if (!validation.valid) {
+    throw new HttpError(400, validation.error);
+  }
+
+  const result = await changeAdminPassword(
+    req.user.id,
+    validation.data.currentPassword,
+    validation.data.newPassword,
+  );
+
+  if (result.status === "unauthorized") {
+    throw new HttpError(401, "Unauthorized");
+  }
+
+  if (result.status === "invalid_current_password") {
+    throw new HttpError(400, "Current password is incorrect.");
+  }
+
+  return res.json({
+    success: true,
+    reauthenticate: true,
+  });
 }
 
 export async function getAdminDashboardHandler(req: Request, res: Response) {

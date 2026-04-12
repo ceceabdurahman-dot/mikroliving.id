@@ -1,16 +1,21 @@
 import { FormEvent } from "react";
 import { ContactChannel, NavigationLink } from "../services/api";
+import AdminPasswordSection from "./AdminPasswordSection";
 import NavigationContactEditor from "./NavigationContactEditor";
 import SiteSettingsEditor from "./SiteSettingsEditor";
+import { PasswordChangeForm } from "./adminPanelTypes";
 
 type AdminSettingsSectionProps = {
   settingsDirty: boolean;
   settings: Record<string, string>;
+  passwordForm: PasswordChangeForm;
   navigationLinks: NavigationLink[];
   contactChannels: ContactChannel[];
   busy: boolean;
   onDiscardChanges: () => void;
   onSettingsChange: (key: string, value: string) => void;
+  onPasswordFormChange: (updater: (current: PasswordChangeForm) => PasswordChangeForm) => void;
+  onPasswordSubmit: (event: FormEvent) => void | Promise<void>;
   onSubmit: (event: FormEvent) => void;
   onFormatHeroStats: () => void;
   onResetDefaults: () => void;
@@ -24,11 +29,14 @@ type AdminSettingsSectionProps = {
 export default function AdminSettingsSection({
   settingsDirty,
   settings,
+  passwordForm,
   navigationLinks,
   contactChannels,
   busy,
   onDiscardChanges,
   onSettingsChange,
+  onPasswordFormChange,
+  onPasswordSubmit,
   onSubmit,
   onFormatHeroStats,
   onResetDefaults,
@@ -58,6 +66,12 @@ export default function AdminSettingsSection({
         onFormatHeroStats={onFormatHeroStats}
         onResetDefaults={onResetDefaults}
         disabled={busy}
+      />
+      <AdminPasswordSection
+        form={passwordForm}
+        busy={busy}
+        onFormChange={onPasswordFormChange}
+        onSubmit={onPasswordSubmit}
       />
       <NavigationContactEditor
         navigationLinks={navigationLinks}

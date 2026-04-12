@@ -1,11 +1,12 @@
 import { FormEvent } from "react";
-import { type LoginForm } from "./adminPanelTypes";
+import { type LoginForm, type LoginMessageTone } from "./adminPanelTypes";
 import BrandMark from "./BrandMark";
 
 type AdminLoginShellProps = {
   busy: boolean;
   loginForm: LoginForm;
   loginMessage: string;
+  loginMessageTone?: LoginMessageTone;
   onSubmit: (event: FormEvent) => void | Promise<void>;
   onLoginFormChange: (updater: (current: LoginForm) => LoginForm) => void;
 };
@@ -14,6 +15,7 @@ export default function AdminLoginShell({
   busy,
   loginForm,
   loginMessage,
+  loginMessageTone = "error",
   onSubmit,
   onLoginFormChange,
 }: AdminLoginShellProps) {
@@ -53,7 +55,11 @@ export default function AdminLoginShell({
           >
             {busy ? "Signing In..." : "Login"}
           </button>
-          {loginMessage ? <p className="text-sm text-red-200">{loginMessage}</p> : null}
+          {loginMessage ? (
+            <p className={`text-sm ${loginMessageTone === "success" ? "text-emerald-200" : "text-red-200"}`}>
+              {loginMessage}
+            </p>
+          ) : null}
         </form>
       </div>
     </div>

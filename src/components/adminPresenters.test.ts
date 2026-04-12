@@ -3,6 +3,7 @@ import test from "node:test";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import AdminLoginShell from "./AdminLoginShell";
+import AdminPasswordSection from "./AdminPasswordSection";
 import AdminStatusHeader from "./AdminStatusHeader";
 import PendingReviewQueue from "./PendingReviewQueue";
 
@@ -75,4 +76,20 @@ test("AdminLoginShell renders login state and error message", () => {
   assert.match(html, /Signing In\.\.\./);
   assert.match(html, /Login failed\./);
   assert.match(html, /Username/);
+});
+
+test("AdminPasswordSection renders password change guidance", () => {
+  const html = renderToStaticMarkup(
+    React.createElement(AdminPasswordSection, {
+      busy: false,
+      form: { currentPassword: "", newPassword: "", confirmPassword: "" },
+      onFormChange: () => undefined,
+      onSubmit: () => undefined,
+    })
+  );
+
+  assert.match(html, /Change Admin Password/);
+  assert.match(html, /Current Password/);
+  assert.match(html, /Confirm New Password/);
+  assert.match(html, /signed out/i);
 });

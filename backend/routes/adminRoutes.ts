@@ -6,6 +6,7 @@ import {
   createProjectHandler,
   createServiceHandler,
   createTestimonialHandler,
+  changePassword,
   deleteContactChannelHandler,
   deleteInsightHandler,
   deleteInquiryHandler,
@@ -40,6 +41,7 @@ export function createAdminRoutes() {
 
   router.post("/login", adminLoginLimiter, asyncHandler(login));
   router.post("/logout", authenticateToken, asyncHandler(logout));
+  router.post("/change-password", authenticateToken, adminWriteLimiter, asyncHandler(changePassword));
   router.get("/dashboard", authenticateToken, asyncHandler(getAdminDashboardHandler));
   router.get("/content", authenticateToken, asyncHandler(getAdminContentHandler));
   router.post("/projects", authenticateToken, adminWriteLimiter, asyncHandler(createProjectHandler));

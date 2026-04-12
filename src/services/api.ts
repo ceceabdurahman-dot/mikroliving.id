@@ -147,6 +147,12 @@ export interface AdminDashboardData {
   inquiries: InquiryItem[];
 }
 
+export interface ChangePasswordPayload {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
 function buildFallbackDashboardData(projects: Project[], content: AdminContent): AdminDashboardData {
   return {
     summary: {
@@ -182,6 +188,10 @@ const getAuthHeader = () => {
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
+const clearAdminSession = () => {
+  localStorage.removeItem(ADMIN_TOKEN_KEY);
+};
+
 export const api = {
   getHomepage: async (): Promise<HomepageContent> => (await axios.get(`${API_BASE_URL}/homepage`)).data,
   getProjects: async (): Promise<Project[]> => (await axios.get(`${API_BASE_URL}/projects`)).data,
@@ -203,9 +213,12 @@ export const api = {
         await axios.post(`${API_BASE_URL}/admin/logout`, null, { headers });
       }
     } finally {
-      localStorage.removeItem(ADMIN_TOKEN_KEY);
+      clearAdminSession();
     }
   },
+  clearAdminSession,
+  changePassword: async (payload: ChangePasswordPayload) =>
+    (await axios.post(`${API_BASE_URL}/admin/change-password`, payload, { headers: getAuthHeader() })).data,
   getAdminDashboard: async (): Promise<AdminDashboardData> => {
     try {
       return (await axios.get(`${API_BASE_URL}/admin/dashboard`, { headers: getAuthHeader() })).data;

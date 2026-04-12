@@ -61,6 +61,12 @@ export type DraftTimestampState = Partial<Record<TabKey, string | null>>;
 export type DraftEnvelope<T> = { value: T; updatedAt: string };
 export type FilenameFormat = "short" | "full";
 export type LoginForm = { username: string; password: string };
+export type LoginMessageTone = "error" | "success";
+export type PasswordChangeForm = {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+};
 export type PendingQueueItem = {
   key: TabKey;
   label: TabKey;
@@ -138,4 +144,10 @@ export const emptyInquiryForm: InquiryForm = {
   admin_note: "",
   replied_at: "",
   resolved_at: "",
+};
+
+export const emptyPasswordChangeForm: PasswordChangeForm = {
+  currentPassword: "",
+  newPassword: "",
+  confirmPassword: "",
 };
