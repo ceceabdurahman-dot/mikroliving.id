@@ -51,7 +51,7 @@ export function createAdminRoutes() {
   router.get("/users", authenticateToken, asyncHandler(getAdminUsersHandler));
   router.post("/users", authenticateToken, adminWriteLimiter, asyncHandler(createAdminUserHandler));
   router.put("/users/:id", authenticateToken, adminWriteLimiter, asyncHandler(updateAdminUserHandler));
-  router.post("/users/:id/reset-password", authenticateToken, adminWriteLimiter, asyncHandler(resetAdminUserPasswordHandler));
+  router.post("/users/:id/reset-password", adminWriteLimiter, authenticateToken, asyncHandler(resetAdminUserPasswordHandler));
   router.post("/projects", authenticateToken, adminWriteLimiter, asyncHandler(createProjectHandler));
   router.put("/projects/:id", authenticateToken, adminWriteLimiter, asyncHandler(updateProjectHandler));
   router.delete("/projects/:id", authenticateToken, adminWriteLimiter, asyncHandler(deleteProjectHandler));
