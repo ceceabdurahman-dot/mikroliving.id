@@ -3,10 +3,12 @@ import jwt from "jsonwebtoken";
 import { AuthenticatedUser } from "../types/auth";
 import { JWT_SECRET } from "../config/env";
 import {
+  findUserAuthById,
   findUserByUsername,
   findUserSessionById,
   invalidateUserTokens,
   recordSuccessfulLogin,
+  updateUserPasswordAndInvalidateTokens,
 } from "./authRepository";
 
 export async function loginAdmin(username: string, password: string) {
@@ -48,4 +50,21 @@ export async function validateAuthenticatedUser(user: AuthenticatedUser) {
 
 export async function logoutAdmin(userId: number) {
   await invalidateUserTokens(userId);
+}
+
+export async function changeAdminPassword(userId: number, currentPassword: string, newPassword: string) {
+  const user = await findUserAuthById(userId);
+
+  if (!user || !user.is_active) {
+    return { status: "unauthorized" as const };
+  }
+
+  if (!(await bcrypt.compare(currentPassword, user.password))) {
+    return { status: "invalid_current_password" as const };
+  }
+
+  const passwordHash = await bcrypt.hash(newPassword, 12);
+  await updateUserPasswordAndInvalidateTokens(userId, passwordHash);
+
+  return { status: "success" as const };
 }

@@ -9,28 +9,36 @@ import AdminServicesSection from "./AdminServicesSection";
 import AdminSettingsSection from "./AdminSettingsSection";
 import AdminTestimonialsSection from "./AdminTestimonialsSection";
 import AdminToastViewport from "./AdminToastViewport";
+import AdminUsersSection from "./AdminUsersSection";
 import BrandMark from "./BrandMark";
 import {
   categories,
   emptyInquiryForm,
   emptyInsightForm,
+  emptyPasswordChangeForm,
   emptyProjectForm,
   emptyServiceForm,
   emptyTestimonialForm,
-  inquiryStatuses,
+  emptyUserForm,
+  emptyUserResetPasswordForm,
   serviceIcons,
   type BusyState,
   type InquiryForm,
   type InsightForm,
+  type LoginMessageTone,
   type LoginForm,
+  type PasswordChangeForm,
   type ProjectForm,
   type ServiceForm,
   type TabKey,
   type TestimonialForm,
   type ToastItem,
+  type UserForm,
+  type UserResetPasswordForm,
 } from "./adminPanelTypes";
 import { defaultEditableSiteSettings } from "./siteSettingsConfig";
 import {
+  type AdminUser,
   type AdminDashboardData,
   type InquiryItem,
   type InsightItem,
@@ -40,7 +48,7 @@ import {
   api,
 } from "../services/api";
 
-const initialLoginForm: LoginForm = { username: "admin", password: "admin123" };
+const initialLoginForm: LoginForm = { username: "", password: "" };
 
 function readFileAsDataUrl(file: File) {
   return new Promise<string>((resolve, reject) => {
@@ -139,6 +147,19 @@ function mapInquiryToForm(inquiry: InquiryItem): InquiryForm {
   };
 }
 
+function mapUserToForm(user: AdminUser): UserForm {
+  return {
+    username: user.username,
+    email: user.email,
+    full_name: user.full_name ?? "",
+    role: user.role,
+    avatar_url: user.avatar_url ?? "",
+    is_active: Boolean(user.is_active),
+    password: "",
+    confirmPassword: "",
+  };
+}
+
 function toComparable(value: unknown) {
   return JSON.stringify(value);
 }
@@ -151,6 +172,7 @@ export default function AdminPanel() {
   const [dashboardLoadError, setDashboardLoadError] = useState("");
   const [loginForm, setLoginForm] = useState<LoginForm>(initialLoginForm);
   const [loginMessage, setLoginMessage] = useState("");
+  const [loginMessageTone, setLoginMessageTone] = useState<LoginMessageTone>("error");
   const [statusMessage, setStatusMessage] = useState("");
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
@@ -176,6 +198,12 @@ export default function AdminPanel() {
 
   const [settingsForm, setSettingsForm] = useState<Record<string, string>>(defaultEditableSiteSettings);
   const [settingsBase, setSettingsBase] = useState<Record<string, string>>(defaultEditableSiteSettings);
+  const [passwordForm, setPasswordForm] = useState<PasswordChangeForm>(emptyPasswordChangeForm);
+  const [editingUserId, setEditingUserId] = useState<number | null>(null);
+  const [userForm, setUserForm] = useState<UserForm>(emptyUserForm);
+  const [userBase, setUserBase] = useState<UserForm>(emptyUserForm);
+  const [userResetPasswordForm, setUserResetPasswordForm] =
+    useState<UserResetPasswordForm>(emptyUserResetPasswordForm);
 
   const pushToast = useCallback((message: string, tone: ToastItem["tone"] = "success") => {
     const id = Date.now() + Math.floor(Math.random() * 1000);
@@ -219,6 +247,7 @@ export default function AdminPanel() {
       { key: "services" as const, label: "Services", eyebrow: "Offerings", count: summary?.services_total ?? 0 },
       { key: "insights" as const, label: "Insights", eyebrow: "Editorial", count: summary?.insights_total ?? 0 },
       { key: "testimonials" as const, label: "Testimonials", eyebrow: "Social Proof", count: summary?.testimonials_total ?? 0 },
+      { key: "users" as const, label: "Users", eyebrow: "Access", count: summary?.users_total ?? (dashboard?.users.length ?? 0) },
       { key: "settings" as const, label: "Settings", eyebrow: "Hero & Footer", count: (dashboard?.navigation_links.length ?? 0) + (dashboard?.contact_channels.length ?? 0) },
       { key: "inquiries" as const, label: "Inquiries", eyebrow: "Inbox", count: summary?.inquiries_total ?? 0 },
     ];
@@ -229,9 +258,20 @@ export default function AdminPanel() {
   const insightDirty = toComparable(insightForm) !== toComparable(insightBase);
   const testimonialDirty = toComparable(testimonialForm) !== toComparable(testimonialBase);
   const inquiryDirty = toComparable(inquiryForm) !== toComparable(inquiryBase);
+  const userDirty = toComparable(userForm) !== toComparable(userBase);
+  const userResetPasswordDirty = toComparable(userResetPasswordForm) !== toComparable(emptyUserResetPasswordForm);
   const settingsDirty = toComparable(settingsForm) !== toComparable(settingsBase);
 
-  const pendingChanges = [projectDirty, serviceDirty, insightDirty, testimonialDirty, inquiryDirty, settingsDirty].filter(Boolean).length;
+  const pendingChanges = [
+    projectDirty,
+    serviceDirty,
+    insightDirty,
+    testimonialDirty,
+    inquiryDirty,
+    userDirty,
+    userResetPasswordDirty,
+    settingsDirty,
+  ].filter(Boolean).length;
 
   const resetProjectEditor = useCallback(() => {
     setEditingProjectId(null);
@@ -263,6 +303,17 @@ export default function AdminPanel() {
     setInquiryBase(emptyInquiryForm);
   }, []);
 
+  const resetPasswordForm = useCallback(() => {
+    setPasswordForm(emptyPasswordChangeForm);
+  }, []);
+
+  const resetUserEditor = useCallback(() => {
+    setEditingUserId(null);
+    setUserForm(emptyUserForm);
+    setUserBase(emptyUserForm);
+    setUserResetPasswordForm(emptyUserResetPasswordForm);
+  }, []);
+
   const uploadImage = useCallback(
     async (
       event: ChangeEvent<HTMLInputElement>,
@@ -292,12 +343,15 @@ export default function AdminPanel() {
     try {
       setBusy("loading");
       setLoginMessage("");
+      setLoginMessageTone("error");
       await api.login(loginForm);
       setIsAuthenticated(true);
+      setLoginForm(initialLoginForm);
       pushToast("Admin session started.");
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Login failed.";
       setLoginMessage(message);
+      setLoginMessageTone("error");
       pushToast(message, "error");
     } finally {
       setBusy("idle");
@@ -335,6 +389,8 @@ export default function AdminPanel() {
       resetInsightEditor();
       resetTestimonialEditor();
       resetInquiryEditor();
+      resetUserEditor();
+      resetPasswordForm();
     }
   };
 
@@ -429,10 +485,72 @@ export default function AdminPanel() {
     );
   };
 
+  const handleUserSubmit = (event: FormEvent) => {
+    event.preventDefault();
+
+    if (editingUserId) {
+      const { password, confirmPassword, ...payload } = userForm;
+      void password;
+      void confirmPassword;
+      return saveAndRefresh(
+        () => api.updateAdminUser(editingUserId, payload),
+        "User updated.",
+        resetUserEditor,
+      );
+    }
+
+    return saveAndRefresh(
+      () => api.createAdminUser(userForm),
+      "User created.",
+      resetUserEditor,
+    );
+  };
+
+  const handleUserPasswordResetSubmit = (event: FormEvent) => {
+    event.preventDefault();
+    if (!editingUserId) return Promise.resolve();
+
+    return saveAndRefresh(
+      () => api.resetAdminUserPassword(editingUserId, userResetPasswordForm),
+      "User password reset.",
+      () => setUserResetPasswordForm(emptyUserResetPasswordForm),
+    );
+  };
+
   const handleSettingsSubmit = (event: FormEvent) => {
     event.preventDefault();
     const payload = Object.entries(settingsForm).map(([setting_key, setting_value]) => ({ setting_key, setting_value }));
     return saveAndRefresh(() => api.updateSiteSettings(payload), "Site settings updated.");
+  };
+
+  const handlePasswordSubmit = async (event: FormEvent) => {
+    event.preventDefault();
+
+    try {
+      setBusy("saving");
+      await api.changePassword(passwordForm);
+      api.clearAdminSession();
+      setLoginForm(initialLoginForm);
+      setLoginMessage("Password updated. Please sign in again with your new password.");
+      setLoginMessageTone("success");
+      setIsAuthenticated(false);
+      setDashboard(null);
+      setActiveTab("dashboard");
+      setStatusMessage("");
+      resetProjectEditor();
+      resetServiceEditor();
+      resetInsightEditor();
+      resetTestimonialEditor();
+      resetInquiryEditor();
+      resetUserEditor();
+      resetPasswordForm();
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Password update failed.";
+      setStatusMessage(message);
+      pushToast(message, "error");
+    } finally {
+      setBusy("idle");
+    }
   };
 
   const handleFormatHeroStats = () => {
@@ -486,6 +604,14 @@ export default function AdminPanel() {
     setInquiryBase(next);
   };
 
+  const openUserEditor = (user: AdminUser) => {
+    const next = mapUserToForm(user);
+    setEditingUserId(user.id);
+    setUserForm(next);
+    setUserBase(next);
+    setUserResetPasswordForm(emptyUserResetPasswordForm);
+  };
+
   const handleDeleteProject = (id: number) => {
     if (!window.confirm("Delete this project?")) return;
     return deleteAndRefresh(() => api.deleteProject(id), "Project deleted.", resetProjectEditor);
@@ -512,7 +638,16 @@ export default function AdminPanel() {
   };
 
   if (!isAuthenticated) {
-    return <AdminLoginShell busy={busy !== "idle"} loginForm={loginForm} loginMessage={loginMessage} onSubmit={handleLogin} onLoginFormChange={setLoginForm} />;
+    return (
+      <AdminLoginShell
+        busy={busy !== "idle"}
+        loginForm={loginForm}
+        loginMessage={loginMessage}
+        loginMessageTone={loginMessageTone}
+        onSubmit={handleLogin}
+        onLoginFormChange={setLoginForm}
+      />
+    );
   }
 
   const data = dashboard;
@@ -544,6 +679,7 @@ export default function AdminPanel() {
   }
 
   const activeTabMeta = tabMeta.find((item) => item.key === activeTab);
+  const editingUser = data.users.find((user) => user.id === editingUserId) ?? null;
 
   return (
     <AdminDashboardShell>
@@ -597,6 +733,8 @@ export default function AdminPanel() {
                 <p className="mt-3 max-w-3xl text-sm leading-7 text-stone-600">
                   {activeTab === "dashboard"
                     ? "Lihat ringkasan performa konten publik dan alur lead masuk, lalu lompat ke fitur yang perlu dirapikan hari ini."
+                    : activeTab === "users"
+                      ? "Kelola akun admin dan editor, atur role, status aktif, dan reset password user yang perlu dipulihkan."
                     : activeTab === "settings"
                       ? "Kelola hero, footer, navigation, dan contact channel agar seluruh struktur halaman depan tetap sinkron."
                       : activeTab === "inquiries"
@@ -695,15 +833,37 @@ export default function AdminPanel() {
             />
           ) : null}
 
+          {activeTab === "users" ? (
+            <AdminUsersSection
+              editingUserId={editingUserId}
+              editingUser={editingUser}
+              userDirty={userDirty}
+              resetPasswordDirty={userResetPasswordDirty}
+              userForm={userForm}
+              resetPasswordForm={userResetPasswordForm}
+              users={data.users}
+              busy={busy}
+              onDiscardChanges={resetUserEditor}
+              onSubmit={handleUserSubmit}
+              onUserFormChange={setUserForm}
+              onEditUser={openUserEditor}
+              onResetPasswordFormChange={setUserResetPasswordForm}
+              onResetPasswordSubmit={handleUserPasswordResetSubmit}
+            />
+          ) : null}
+
           {activeTab === "settings" ? (
             <AdminSettingsSection
               settingsDirty={settingsDirty}
               settings={settingsForm}
+              passwordForm={passwordForm}
               navigationLinks={data.navigation_links}
               contactChannels={data.contact_channels}
               busy={busy !== "idle"}
               onDiscardChanges={() => setSettingsForm(settingsBase)}
               onSettingsChange={(key, value) => setSettingsForm((current) => ({ ...current, [key]: value }))}
+              onPasswordFormChange={setPasswordForm}
+              onPasswordSubmit={handlePasswordSubmit}
               onSubmit={handleSettingsSubmit}
               onFormatHeroStats={handleFormatHeroStats}
               onResetDefaults={handleResetDefaults}

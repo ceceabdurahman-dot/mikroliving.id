@@ -1,12 +1,14 @@
 import { getAdminContent } from "./cmsService";
 import { getAdminInquiries } from "./inquiryService";
 import { findAllProjects } from "./projectRepository";
+import { getAdminUsers } from "./userService";
 
 export async function getAdminDashboardData() {
-  const [projects, content, inquiries] = await Promise.all([
+  const [projects, content, inquiries, users] = await Promise.all([
     findAllProjects(),
     getAdminContent(),
     getAdminInquiries(),
+    getAdminUsers(),
   ]);
 
   return {
@@ -26,6 +28,10 @@ export async function getAdminDashboardData() {
       replied_inquiries: inquiries.filter((item) => item.status === "replied").length,
       archived_inquiries: inquiries.filter((item) => item.status === "archived").length,
       latest_inquiry_at: inquiries[0]?.created_at ?? null,
+      users_total: users.length,
+      active_users: users.filter((item) => Boolean(item.is_active)).length,
+      admin_users: users.filter((item) => item.role === "admin").length,
+      editor_users: users.filter((item) => item.role === "editor").length,
     },
     projects,
     services: content.services,
@@ -35,5 +41,6 @@ export async function getAdminDashboardData() {
     navigation_links: content.navigation_links,
     contact_channels: content.contact_channels,
     inquiries,
+    users,
   };
 }

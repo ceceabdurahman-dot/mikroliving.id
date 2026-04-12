@@ -1,4 +1,5 @@
-export type TabKey = "dashboard" | "projects" | "services" | "insights" | "testimonials" | "settings" | "inquiries";
+export type TabKey = "dashboard" | "projects" | "services" | "insights" | "testimonials" | "users" | "settings" | "inquiries";
+export type UserRole = "admin" | "editor";
 
 export type ProjectForm = {
   title: string;
@@ -55,12 +56,34 @@ export type InquiryForm = {
   resolved_at: string;
 };
 
+export type UserForm = {
+  username: string;
+  email: string;
+  full_name: string;
+  role: UserRole;
+  avatar_url: string;
+  is_active: boolean;
+  password: string;
+  confirmPassword: string;
+};
+
+export type UserResetPasswordForm = {
+  newPassword: string;
+  confirmPassword: string;
+};
+
 export type ToastItem = { id: number; message: string; tone: "success" | "error" };
 export type RestoredDraftState = Partial<Record<TabKey, boolean>>;
 export type DraftTimestampState = Partial<Record<TabKey, string | null>>;
 export type DraftEnvelope<T> = { value: T; updatedAt: string };
 export type FilenameFormat = "short" | "full";
 export type LoginForm = { username: string; password: string };
+export type LoginMessageTone = "error" | "success";
+export type PasswordChangeForm = {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+};
 export type PendingQueueItem = {
   key: TabKey;
   label: TabKey;
@@ -138,4 +161,26 @@ export const emptyInquiryForm: InquiryForm = {
   admin_note: "",
   replied_at: "",
   resolved_at: "",
+};
+
+export const emptyPasswordChangeForm: PasswordChangeForm = {
+  currentPassword: "",
+  newPassword: "",
+  confirmPassword: "",
+};
+
+export const emptyUserForm: UserForm = {
+  username: "",
+  email: "",
+  full_name: "",
+  role: "editor",
+  avatar_url: "",
+  is_active: true,
+  password: "",
+  confirmPassword: "",
+};
+
+export const emptyUserResetPasswordForm: UserResetPasswordForm = {
+  newPassword: "",
+  confirmPassword: "",
 };
