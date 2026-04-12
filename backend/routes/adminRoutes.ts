@@ -79,7 +79,7 @@ export function createAdminRoutes() {
   router.put("/site-settings", authenticateToken, trustedAdminWriteOrigin, requireAdmin, adminWriteLimiter, asyncHandler(updateSiteSettingsHandler));
   router.put("/inquiries/:id", authenticateToken, trustedAdminWriteOrigin, adminWriteLimiter, asyncHandler(updateInquiryHandler));
   router.delete("/inquiries/:id", authenticateToken, trustedAdminWriteOrigin, adminWriteLimiter, asyncHandler(deleteInquiryHandler));
-  router.post("/uploads/image", authenticateToken, adminWriteLimiter, uploadLimiter, trustedAdminWriteOrigin, asyncHandler(uploadImage));
+  router.post("/uploads/image", adminWriteLimiter, uploadLimiter, trustedAdminWriteOrigin, authenticateToken, asyncHandler(uploadImage));
 
   return router;
 }
