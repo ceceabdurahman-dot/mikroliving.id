@@ -1,4 +1,5 @@
-import { Request, Response } from "express";
+import { CookieOptions, Request, Response } from "express";
+import { AUTH_COOKIE } from "../config/env";
 import { HttpError } from "../errors/httpError";
 import { changeAdminPassword, loginAdmin, logoutAdmin } from "../services/authService";
 import { getAdminDashboardData } from "../services/adminDashboardService";
@@ -54,6 +55,48 @@ import {
   validateUpdateUserPayload,
 } from "../validators/userValidator";
 
+function getBaseCookieOptions(): CookieOptions {
+  return {
+    path: "/",
+    sameSite: AUTH_COOKIE.sameSite,
+    secure: AUTH_COOKIE.secure,
+    domain: AUTH_COOKIE.domain,
+    maxAge: AUTH_COOKIE.maxAgeMs,
+  };
+}
+
+function setAdminSessionCookies(res: Response, token: string) {
+  const baseOptions = getBaseCookieOptions();
+
+  res.cookie(AUTH_COOKIE.name, token, {
+    ...baseOptions,
+    httpOnly: true,
+  });
+
+  res.cookie(AUTH_COOKIE.hintName, "1", {
+    ...baseOptions,
+    httpOnly: false,
+  });
+}
+
+function clearAdminSessionCookies(res: Response) {
+  const baseOptions = getBaseCookieOptions();
+
+  res.clearCookie(AUTH_COOKIE.name, {
+    path: baseOptions.path,
+    sameSite: baseOptions.sameSite,
+    secure: baseOptions.secure,
+    domain: baseOptions.domain,
+  });
+
+  res.clearCookie(AUTH_COOKIE.hintName, {
+    path: baseOptions.path,
+    sameSite: baseOptions.sameSite,
+    secure: baseOptions.secure,
+    domain: baseOptions.domain,
+  });
+}
+
 function throwForUserMutationResult(
   result:
     | { status: "success"; id?: number }
@@ -81,7 +124,7 @@ function throwForUserMutationResult(
     case "cannot_reset_self":
       throw new HttpError(400, "Use Change Password to update your own password.");
     case "last_active_admin":
-      throw new HttpError(400, "At least one active admin must remain.");
+      throw new HttpError(400, "At least one active admin or superadmin must remain.");
     default:
       throw new HttpError(500, "Unexpected user mutation result.");
   }
@@ -92,7 +135,11 @@ export async function login(req: Request, res: Response) {
   if (!validation.valid) throw new HttpError(400, validation.error);
   const result = await loginAdmin(validation.data.username, validation.data.password);
   if (!result) throw new HttpError(401, "Invalid credentials");
-  return res.json(result);
+  setAdminSessionCookies(res, result.token);
+  return res.json({
+    success: true,
+    user: result.user,
+  });
 }
 
 export async function logout(req: Request, res: Response) {
@@ -101,6 +148,7 @@ export async function logout(req: Request, res: Response) {
   }
 
   await logoutAdmin(req.user.id);
+  clearAdminSessionCookies(res);
   return res.json({ success: true });
 }
 
@@ -128,6 +176,7 @@ export async function changePassword(req: Request, res: Response) {
     throw new HttpError(400, "Current password is incorrect.");
   }
 
+  clearAdminSessionCookies(res);
   return res.json({
     success: true,
     reauthenticate: true,
@@ -135,7 +184,11 @@ export async function changePassword(req: Request, res: Response) {
 }
 
 export async function getAdminDashboardHandler(req: Request, res: Response) {
-  return res.json(await getAdminDashboardData());
+  if (!req.user) {
+    throw new HttpError(401, "Unauthorized");
+  }
+
+  return res.json(await getAdminDashboardData(req.user));
 }
 
 export async function getAdminContentHandler(req: Request, res: Response) {

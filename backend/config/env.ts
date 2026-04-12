@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 export const PORT = Number(process.env.PORT) || 3000;
+type SameSiteValue = "lax" | "strict" | "none";
 
 function requireEnv(name: string) {
   const value = process.env[name]?.trim();
@@ -30,6 +31,46 @@ function getEnvNumber(name: string, fallback: number) {
   const raw = process.env[name];
   const parsed = raw ? Number(raw) : NaN;
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function getEnvBoolean(name: string, fallback: boolean) {
+  const raw = process.env[name]?.trim().toLowerCase();
+
+  if (!raw) {
+    return fallback;
+  }
+
+  if (raw === "true" || raw === "1" || raw === "yes") {
+    return true;
+  }
+
+  if (raw === "false" || raw === "0" || raw === "no") {
+    return false;
+  }
+
+  return fallback;
+}
+
+function parseCommaSeparatedEnv(name: string) {
+  const raw = process.env[name]?.trim();
+  if (!raw) {
+    return [];
+  }
+
+  return raw
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function getSameSiteValue(name: string, fallback: SameSiteValue): SameSiteValue {
+  const raw = process.env[name]?.trim().toLowerCase();
+
+  if (raw === "lax" || raw === "strict" || raw === "none") {
+    return raw;
+  }
+
+  return fallback;
 }
 
 export const RATE_LIMITS = {
@@ -64,3 +105,14 @@ export const CLOUDINARY_CONFIG = {
   apiKey: process.env.CLOUDINARY_API_KEY,
   apiSecret: process.env.CLOUDINARY_API_SECRET,
 };
+
+export const AUTH_COOKIE = {
+  name: process.env.AUTH_COOKIE_NAME?.trim() || "ml_admin_session",
+  hintName: process.env.AUTH_COOKIE_HINT_NAME?.trim() || "ml_admin_session_hint",
+  maxAgeMs: getEnvNumber("AUTH_COOKIE_MAX_AGE_MS", 24 * 60 * 60 * 1000),
+  secure: getEnvBoolean("AUTH_COOKIE_SECURE", process.env.NODE_ENV === "production"),
+  sameSite: getSameSiteValue("AUTH_COOKIE_SAME_SITE", "lax"),
+  domain: process.env.AUTH_COOKIE_DOMAIN?.trim() || undefined,
+};
+
+export const CORS_ALLOWED_ORIGINS = parseCommaSeparatedEnv("CORS_ALLOWED_ORIGINS");

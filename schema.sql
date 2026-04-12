@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS users (
     password VARCHAR(255) NOT NULL,
     email VARCHAR(100) NOT NULL UNIQUE,
     full_name VARCHAR(120) DEFAULT NULL,
-    role ENUM('admin', 'editor') NOT NULL DEFAULT 'admin',
+    role ENUM('superadmin', 'admin', 'editor') NOT NULL DEFAULT 'admin',
     avatar_url VARCHAR(500) DEFAULT NULL,
     is_active TINYINT(1) NOT NULL DEFAULT 1,
     last_login_at DATETIME DEFAULT NULL,

@@ -1,11 +1,11 @@
 import { isValidHttpUrl, normalizeString } from "../utils/strings";
-import { UserRole } from "../types/user";
+import { isUserRole, UserRole } from "../types/user";
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const usernamePattern = /^[a-zA-Z0-9_.-]{3,50}$/;
 
 function parseUserRole(value: unknown): UserRole | null {
-  return value === "admin" || value === "editor" ? value : null;
+  return isUserRole(value) ? value : null;
 }
 
 function parseIsActive(value: unknown, defaultValue = true) {

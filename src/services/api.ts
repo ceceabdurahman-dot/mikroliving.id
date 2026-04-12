@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API_BASE_URL = "/api";
-const ADMIN_TOKEN_KEY = "admin_token";
+const ADMIN_SESSION_HINT_COOKIE_NAME = "ml_admin_session_hint";
 
 export interface Project {
   id: number;
@@ -99,7 +99,7 @@ export interface InquiryItem {
   updated_at?: string;
 }
 
-export type AdminUserRole = "admin" | "editor";
+export type AdminUserRole = "superadmin" | "admin" | "editor";
 
 export interface AdminUser {
   id: number;
@@ -151,10 +151,18 @@ export interface AdminDashboardSummary {
   users_total: number;
   active_users: number;
   admin_users: number;
+  superadmin_users: number;
   editor_users: number;
 }
 
+export interface AdminDashboardCurrentUser {
+  id: number;
+  username: string;
+  role: AdminUserRole;
+}
+
 export interface AdminDashboardData {
+  current_user?: AdminDashboardCurrentUser;
   summary: AdminDashboardSummary;
   projects: Project[];
   services: ServiceItem[];
@@ -171,6 +179,15 @@ export interface ChangePasswordPayload {
   currentPassword: string;
   newPassword: string;
   confirmPassword: string;
+}
+
+export interface AdminLoginResponse {
+  success: boolean;
+  user: {
+    id: number;
+    username: string;
+    role: AdminUserRole;
+  };
 }
 
 export interface AdminUserCreatePayload {
@@ -200,6 +217,7 @@ export interface AdminUserResetPasswordPayload {
 
 function buildFallbackDashboardData(projects: Project[], content: AdminContent): AdminDashboardData {
   return {
+    current_user: undefined,
     summary: {
       projects_total: projects.length,
       featured_projects: projects.filter((item) => Boolean(item.is_featured)).length,
@@ -219,6 +237,7 @@ function buildFallbackDashboardData(projects: Project[], content: AdminContent):
       users_total: 0,
       active_users: 0,
       admin_users: 0,
+      superadmin_users: 0,
       editor_users: 0,
     },
     projects,
@@ -233,16 +252,28 @@ function buildFallbackDashboardData(projects: Project[], content: AdminContent):
   };
 }
 
-const getAuthHeader = () => {
-  const token = localStorage.getItem(ADMIN_TOKEN_KEY);
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
-
-const clearAdminSession = () => {
-  localStorage.removeItem(ADMIN_TOKEN_KEY);
-};
-
 type ApiError = Error & { status?: number };
+
+function getSessionHintCookie() {
+  if (typeof document === "undefined") {
+    return "";
+  }
+
+  const cookie = document.cookie
+    .split(";")
+    .map((item) => item.trim())
+    .find((item) => item.startsWith(`${ADMIN_SESSION_HINT_COOKIE_NAME}=`));
+
+  return cookie?.split("=")[1] ?? "";
+}
+
+function clearAdminSession() {
+  if (typeof document === "undefined") {
+    return;
+  }
+
+  document.cookie = `${ADMIN_SESSION_HINT_COOKIE_NAME}=; Max-Age=0; Path=/; SameSite=Lax`;
+}
 
 function extractApiError(error: unknown) {
   if (!axios.isAxiosError(error)) {
@@ -270,38 +301,38 @@ async function withApiError<T>(request: Promise<{ data: T }>): Promise<T> {
   }
 }
 
+const adminRequestConfig = { withCredentials: true };
+
+export function isApiSessionError(error: unknown) {
+  return Boolean(
+    error
+    && typeof error === "object"
+    && "status" in error
+    && (error as ApiError).status === 401,
+  );
+}
+
 export const api = {
   getHomepage: async (): Promise<HomepageContent> => (await axios.get(`${API_BASE_URL}/homepage`)).data,
   getProjects: async (): Promise<Project[]> => (await axios.get(`${API_BASE_URL}/projects`)).data,
   submitInquiry: async (data: { name: string; email: string; phone?: string; message: string }) =>
     (await axios.post(`${API_BASE_URL}/contact`, data)).data,
-  login: async (credentials: { username: string; password: string }) => {
-    const response = await withApiError<{ token?: string } & Record<string, unknown>>(
-      axios.post(`${API_BASE_URL}/admin/login`, credentials),
-    );
-    if (response.token) {
-      localStorage.setItem(ADMIN_TOKEN_KEY, response.token);
-    }
-    return response;
-  },
-  hasAdminSession: () => Boolean(localStorage.getItem(ADMIN_TOKEN_KEY)),
+  login: async (credentials: { username: string; password: string }) =>
+    withApiError<AdminLoginResponse>(axios.post(`${API_BASE_URL}/admin/login`, credentials, adminRequestConfig)),
+  hasAdminSession: () => getSessionHintCookie() === "1",
   logout: async () => {
-    const headers = getAuthHeader();
-
     try {
-      if (headers.Authorization) {
-        await withApiError(axios.post(`${API_BASE_URL}/admin/logout`, null, { headers }));
-      }
+      await withApiError(axios.post(`${API_BASE_URL}/admin/logout`, null, adminRequestConfig));
     } finally {
       clearAdminSession();
     }
   },
   clearAdminSession,
   changePassword: async (payload: ChangePasswordPayload) =>
-    withApiError(axios.post(`${API_BASE_URL}/admin/change-password`, payload, { headers: getAuthHeader() })),
+    withApiError(axios.post(`${API_BASE_URL}/admin/change-password`, payload, adminRequestConfig)),
   getAdminDashboard: async (): Promise<AdminDashboardData> => {
     try {
-      return await withApiError(axios.get<AdminDashboardData>(`${API_BASE_URL}/admin/dashboard`, { headers: getAuthHeader() }));
+      return await withApiError(axios.get<AdminDashboardData>(`${API_BASE_URL}/admin/dashboard`, adminRequestConfig));
     } catch (error) {
       if (!error || typeof error !== "object" || (error as ApiError).status !== 404) {
         throw error;
@@ -309,68 +340,68 @@ export const api = {
 
       const [projects, content] = await Promise.all([
         axios.get<Project[]>(`${API_BASE_URL}/projects`),
-        axios.get<AdminContent>(`${API_BASE_URL}/admin/content`, { headers: getAuthHeader() }),
+        axios.get<AdminContent>(`${API_BASE_URL}/admin/content`, adminRequestConfig),
       ]);
 
       return buildFallbackDashboardData(projects.data, content.data);
     }
   },
   getAdminContent: async (): Promise<AdminContent> =>
-    (await axios.get(`${API_BASE_URL}/admin/content`, { headers: getAuthHeader() })).data,
+    (await axios.get(`${API_BASE_URL}/admin/content`, adminRequestConfig)).data,
   getAdminUsers: async (): Promise<AdminUser[]> =>
-    withApiError(axios.get<AdminUser[]>(`${API_BASE_URL}/admin/users`, { headers: getAuthHeader() })),
+    withApiError(axios.get<AdminUser[]>(`${API_BASE_URL}/admin/users`, adminRequestConfig)),
   createAdminUser: async (payload: AdminUserCreatePayload) =>
-    withApiError(axios.post(`${API_BASE_URL}/admin/users`, payload, { headers: getAuthHeader() })),
+    withApiError(axios.post(`${API_BASE_URL}/admin/users`, payload, adminRequestConfig)),
   updateAdminUser: async (id: number, payload: AdminUserUpdatePayload) =>
-    withApiError(axios.put(`${API_BASE_URL}/admin/users/${id}`, payload, { headers: getAuthHeader() })),
+    withApiError(axios.put(`${API_BASE_URL}/admin/users/${id}`, payload, adminRequestConfig)),
   resetAdminUserPassword: async (id: number, payload: AdminUserResetPasswordPayload) =>
     withApiError(
-      axios.post(`${API_BASE_URL}/admin/users/${id}/reset-password`, payload, { headers: getAuthHeader() }),
+      axios.post(`${API_BASE_URL}/admin/users/${id}/reset-password`, payload, adminRequestConfig),
     ),
   createProject: async (payload: Omit<Project, "id">) =>
-    (await axios.post(`${API_BASE_URL}/admin/projects`, payload, { headers: getAuthHeader() })).data,
+    (await axios.post(`${API_BASE_URL}/admin/projects`, payload, adminRequestConfig)).data,
   updateProject: async (id: number, payload: Partial<Project>) =>
-    (await axios.put(`${API_BASE_URL}/admin/projects/${id}`, payload, { headers: getAuthHeader() })).data,
+    (await axios.put(`${API_BASE_URL}/admin/projects/${id}`, payload, adminRequestConfig)).data,
   deleteProject: async (id: number) =>
-    (await axios.delete(`${API_BASE_URL}/admin/projects/${id}`, { headers: getAuthHeader() })).data,
+    (await axios.delete(`${API_BASE_URL}/admin/projects/${id}`, adminRequestConfig)).data,
   createService: async (payload: Omit<ServiceItem, "id">) =>
-    (await axios.post(`${API_BASE_URL}/admin/services`, payload, { headers: getAuthHeader() })).data,
+    (await axios.post(`${API_BASE_URL}/admin/services`, payload, adminRequestConfig)).data,
   updateService: async (id: number, payload: Omit<ServiceItem, "id">) =>
-    (await axios.put(`${API_BASE_URL}/admin/services/${id}`, payload, { headers: getAuthHeader() })).data,
+    (await axios.put(`${API_BASE_URL}/admin/services/${id}`, payload, adminRequestConfig)).data,
   deleteService: async (id: number) =>
-    (await axios.delete(`${API_BASE_URL}/admin/services/${id}`, { headers: getAuthHeader() })).data,
+    (await axios.delete(`${API_BASE_URL}/admin/services/${id}`, adminRequestConfig)).data,
   createInsight: async (payload: Omit<InsightItem, "id" | "slug">) =>
-    (await axios.post(`${API_BASE_URL}/admin/insights`, payload, { headers: getAuthHeader() })).data,
+    (await axios.post(`${API_BASE_URL}/admin/insights`, payload, adminRequestConfig)).data,
   updateInsight: async (id: number, payload: Omit<InsightItem, "id" | "slug">) =>
-    (await axios.put(`${API_BASE_URL}/admin/insights/${id}`, payload, { headers: getAuthHeader() })).data,
+    (await axios.put(`${API_BASE_URL}/admin/insights/${id}`, payload, adminRequestConfig)).data,
   deleteInsight: async (id: number) =>
-    (await axios.delete(`${API_BASE_URL}/admin/insights/${id}`, { headers: getAuthHeader() })).data,
+    (await axios.delete(`${API_BASE_URL}/admin/insights/${id}`, adminRequestConfig)).data,
   createTestimonial: async (payload: Omit<TestimonialItem, "id">) =>
-    (await axios.post(`${API_BASE_URL}/admin/testimonials`, payload, { headers: getAuthHeader() })).data,
+    (await axios.post(`${API_BASE_URL}/admin/testimonials`, payload, adminRequestConfig)).data,
   updateTestimonial: async (id: number, payload: Omit<TestimonialItem, "id">) =>
-    (await axios.put(`${API_BASE_URL}/admin/testimonials/${id}`, payload, { headers: getAuthHeader() })).data,
+    (await axios.put(`${API_BASE_URL}/admin/testimonials/${id}`, payload, adminRequestConfig)).data,
   deleteTestimonial: async (id: number) =>
-    (await axios.delete(`${API_BASE_URL}/admin/testimonials/${id}`, { headers: getAuthHeader() })).data,
+    (await axios.delete(`${API_BASE_URL}/admin/testimonials/${id}`, adminRequestConfig)).data,
   createNavigationLink: async (payload: Omit<NavigationLink, "id">) =>
-    (await axios.post(`${API_BASE_URL}/admin/navigation-links`, payload, { headers: getAuthHeader() })).data,
+    (await axios.post(`${API_BASE_URL}/admin/navigation-links`, payload, adminRequestConfig)).data,
   updateNavigationLink: async (id: number, payload: Omit<NavigationLink, "id">) =>
-    (await axios.put(`${API_BASE_URL}/admin/navigation-links/${id}`, payload, { headers: getAuthHeader() })).data,
+    (await axios.put(`${API_BASE_URL}/admin/navigation-links/${id}`, payload, adminRequestConfig)).data,
   deleteNavigationLink: async (id: number) =>
-    (await axios.delete(`${API_BASE_URL}/admin/navigation-links/${id}`, { headers: getAuthHeader() })).data,
+    (await axios.delete(`${API_BASE_URL}/admin/navigation-links/${id}`, adminRequestConfig)).data,
   createContactChannel: async (payload: Omit<ContactChannel, "id">) =>
-    (await axios.post(`${API_BASE_URL}/admin/contact-channels`, payload, { headers: getAuthHeader() })).data,
+    (await axios.post(`${API_BASE_URL}/admin/contact-channels`, payload, adminRequestConfig)).data,
   updateContactChannel: async (id: number, payload: Omit<ContactChannel, "id">) =>
-    (await axios.put(`${API_BASE_URL}/admin/contact-channels/${id}`, payload, { headers: getAuthHeader() })).data,
+    (await axios.put(`${API_BASE_URL}/admin/contact-channels/${id}`, payload, adminRequestConfig)).data,
   deleteContactChannel: async (id: number) =>
-    (await axios.delete(`${API_BASE_URL}/admin/contact-channels/${id}`, { headers: getAuthHeader() })).data,
+    (await axios.delete(`${API_BASE_URL}/admin/contact-channels/${id}`, adminRequestConfig)).data,
   updateSiteSettings: async (payload: Array<{ setting_key: string; setting_value: string }>) =>
-    (await axios.put(`${API_BASE_URL}/admin/site-settings`, payload, { headers: getAuthHeader() })).data,
+    (await axios.put(`${API_BASE_URL}/admin/site-settings`, payload, adminRequestConfig)).data,
   updateInquiry: async (id: number, payload: Omit<InquiryItem, "id" | "created_at" | "updated_at" | "ip_address" | "user_agent">) =>
-    (await axios.put(`${API_BASE_URL}/admin/inquiries/${id}`, payload, { headers: getAuthHeader() })).data,
+    (await axios.put(`${API_BASE_URL}/admin/inquiries/${id}`, payload, adminRequestConfig)).data,
   deleteInquiry: async (id: number) =>
-    (await axios.delete(`${API_BASE_URL}/admin/inquiries/${id}`, { headers: getAuthHeader() })).data,
+    (await axios.delete(`${API_BASE_URL}/admin/inquiries/${id}`, adminRequestConfig)).data,
   uploadAdminImage: async (payload: { fileName: string; dataUrl: string }) =>
-    (await axios.post(`${API_BASE_URL}/admin/uploads/image`, payload, { headers: getAuthHeader() })).data as {
+    (await axios.post(`${API_BASE_URL}/admin/uploads/image`, payload, adminRequestConfig)).data as {
       success: boolean;
       imageUrl: string;
       publicId: string;

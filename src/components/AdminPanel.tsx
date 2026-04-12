@@ -46,6 +46,7 @@ import {
   type ServiceItem,
   type TestimonialItem,
   api,
+  isApiSessionError,
 } from "../services/api";
 
 const initialLoginForm: LoginForm = { username: "", password: "" };
@@ -204,6 +205,9 @@ export default function AdminPanel() {
   const [userBase, setUserBase] = useState<UserForm>(emptyUserForm);
   const [userResetPasswordForm, setUserResetPasswordForm] =
     useState<UserResetPasswordForm>(emptyUserResetPasswordForm);
+  const currentUserRole = dashboard?.current_user?.role ?? "admin";
+  const canManageUsers = currentUserRole === "admin" || currentUserRole === "superadmin";
+  const canManageSystemSettings = canManageUsers;
 
   const pushToast = useCallback((message: string, tone: ToastItem["tone"] = "success") => {
     const id = Date.now() + Math.floor(Math.random() * 1000);
@@ -223,35 +227,25 @@ export default function AdminPanel() {
     return data;
   }, []);
 
-  useEffect(() => {
-    if (!isAuthenticated) {
-      return;
-    }
-
-    setBusy("loading");
-    refreshDashboard()
-      .catch((error: unknown) => {
-        const message = error instanceof Error ? error.message : "Failed to load admin dashboard.";
-        setDashboardLoadError(message);
-        setStatusMessage(message);
-        pushToast(message, "error");
-      })
-      .finally(() => setBusy("idle"));
-  }, [isAuthenticated, pushToast, refreshDashboard]);
-
   const tabMeta = useMemo(() => {
     const summary = dashboard?.summary;
-    return [
+    const baseTabs = [
       { key: "dashboard" as const, label: "Dashboard", eyebrow: "Overview", count: summary?.projects_total ?? 0 },
       { key: "projects" as const, label: "Projects", eyebrow: "Portfolio", count: summary?.projects_total ?? 0 },
       { key: "services" as const, label: "Services", eyebrow: "Offerings", count: summary?.services_total ?? 0 },
       { key: "insights" as const, label: "Insights", eyebrow: "Editorial", count: summary?.insights_total ?? 0 },
       { key: "testimonials" as const, label: "Testimonials", eyebrow: "Social Proof", count: summary?.testimonials_total ?? 0 },
-      { key: "users" as const, label: "Users", eyebrow: "Access", count: summary?.users_total ?? (dashboard?.users.length ?? 0) },
       { key: "settings" as const, label: "Settings", eyebrow: "Hero & Footer", count: (dashboard?.navigation_links.length ?? 0) + (dashboard?.contact_channels.length ?? 0) },
       { key: "inquiries" as const, label: "Inquiries", eyebrow: "Inbox", count: summary?.inquiries_total ?? 0 },
     ];
-  }, [dashboard]);
+    return canManageUsers
+      ? [
+          ...baseTabs.slice(0, 5),
+          { key: "users" as const, label: "Users", eyebrow: "Access", count: summary?.users_total ?? (dashboard?.users.length ?? 0) },
+          ...baseTabs.slice(5),
+        ]
+      : baseTabs;
+  }, [canManageUsers, dashboard]);
 
   const projectDirty = toComparable(projectForm) !== toComparable(projectBase);
   const serviceDirty = toComparable(serviceForm) !== toComparable(serviceBase);
@@ -314,6 +308,64 @@ export default function AdminPanel() {
     setUserResetPasswordForm(emptyUserResetPasswordForm);
   }, []);
 
+  const clearAdminWorkspace = useCallback(() => {
+    setDashboard(null);
+    setDashboardLoadError("");
+    setActiveTab("dashboard");
+    setStatusMessage("");
+    resetProjectEditor();
+    resetServiceEditor();
+    resetInsightEditor();
+    resetTestimonialEditor();
+    resetInquiryEditor();
+    resetUserEditor();
+    resetPasswordForm();
+  }, [
+    resetInquiryEditor,
+    resetInsightEditor,
+    resetPasswordForm,
+    resetProjectEditor,
+    resetServiceEditor,
+    resetTestimonialEditor,
+    resetUserEditor,
+  ]);
+
+  const expireAdminSession = useCallback((message: string) => {
+    api.clearAdminSession();
+    setIsAuthenticated(false);
+    clearAdminWorkspace();
+    setLoginForm(initialLoginForm);
+    setLoginMessage(message);
+    setLoginMessageTone("error");
+  }, [clearAdminWorkspace]);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      return;
+    }
+
+    setBusy("loading");
+    refreshDashboard()
+      .catch((error: unknown) => {
+        if (isApiSessionError(error)) {
+          expireAdminSession("Your admin session expired. Please sign in again.");
+          return;
+        }
+
+        const message = error instanceof Error ? error.message : "Failed to load admin dashboard.";
+        setDashboardLoadError(message);
+        setStatusMessage(message);
+        pushToast(message, "error");
+      })
+      .finally(() => setBusy("idle"));
+  }, [expireAdminSession, isAuthenticated, pushToast, refreshDashboard]);
+
+  useEffect(() => {
+    if (activeTab === "users" && !canManageUsers) {
+      setActiveTab("dashboard");
+    }
+  }, [activeTab, canManageUsers]);
+
   const uploadImage = useCallback(
     async (
       event: ChangeEvent<HTMLInputElement>,
@@ -344,6 +396,7 @@ export default function AdminPanel() {
       setBusy("loading");
       setLoginMessage("");
       setLoginMessageTone("error");
+      setDashboardLoadError("");
       await api.login(loginForm);
       setIsAuthenticated(true);
       setLoginForm(initialLoginForm);
@@ -365,6 +418,11 @@ export default function AdminPanel() {
       setStatusMessage("Dashboard refreshed.");
       pushToast("Dashboard refreshed.");
     } catch (error: unknown) {
+      if (isApiSessionError(error)) {
+        expireAdminSession("Your admin session expired. Please sign in again.");
+        return;
+      }
+
       const message = error instanceof Error ? error.message : "Failed to refresh dashboard.";
       setStatusMessage(message);
       pushToast(message, "error");
@@ -381,16 +439,9 @@ export default function AdminPanel() {
     } finally {
       setBusy("idle");
       setIsAuthenticated(false);
-      setDashboard(null);
-      setActiveTab("dashboard");
-      setStatusMessage("");
-      resetProjectEditor();
-      resetServiceEditor();
-      resetInsightEditor();
-      resetTestimonialEditor();
-      resetInquiryEditor();
-      resetUserEditor();
-      resetPasswordForm();
+      setLoginMessage("");
+      setLoginMessageTone("error");
+      clearAdminWorkspace();
     }
   };
 
@@ -403,6 +454,11 @@ export default function AdminPanel() {
       setStatusMessage(successMessage);
       pushToast(successMessage);
     } catch (error: unknown) {
+      if (isApiSessionError(error)) {
+        expireAdminSession("Your admin session expired. Please sign in again.");
+        return;
+      }
+
       const message = error instanceof Error ? error.message : "Action failed.";
       setStatusMessage(message);
       pushToast(message, "error");
@@ -420,6 +476,11 @@ export default function AdminPanel() {
       setStatusMessage(successMessage);
       pushToast(successMessage);
     } catch (error: unknown) {
+      if (isApiSessionError(error)) {
+        expireAdminSession("Your admin session expired. Please sign in again.");
+        return;
+      }
+
       const message = error instanceof Error ? error.message : "Delete failed.";
       setStatusMessage(message);
       pushToast(message, "error");
@@ -534,16 +595,7 @@ export default function AdminPanel() {
       setLoginMessage("Password updated. Please sign in again with your new password.");
       setLoginMessageTone("success");
       setIsAuthenticated(false);
-      setDashboard(null);
-      setActiveTab("dashboard");
-      setStatusMessage("");
-      resetProjectEditor();
-      resetServiceEditor();
-      resetInsightEditor();
-      resetTestimonialEditor();
-      resetInquiryEditor();
-      resetUserEditor();
-      resetPasswordForm();
+      clearAdminWorkspace();
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Password update failed.";
       setStatusMessage(message);
@@ -734,9 +786,11 @@ export default function AdminPanel() {
                   {activeTab === "dashboard"
                     ? "Lihat ringkasan performa konten publik dan alur lead masuk, lalu lompat ke fitur yang perlu dirapikan hari ini."
                     : activeTab === "users"
-                      ? "Kelola akun admin dan editor, atur role, status aktif, dan reset password user yang perlu dipulihkan."
+                      ? "Kelola akun superadmin, admin, dan editor, atur role, status aktif, dan reset password user yang perlu dipulihkan."
                     : activeTab === "settings"
-                      ? "Kelola hero, footer, navigation, dan contact channel agar seluruh struktur halaman depan tetap sinkron."
+                      ? canManageSystemSettings
+                        ? "Kelola hero, footer, navigation, dan contact channel agar seluruh struktur halaman depan tetap sinkron."
+                        : "Ubah password akun Anda dari sini. Pengaturan sistem dan konfigurasi CMS hanya tersedia untuk admin atau superadmin."
                       : activeTab === "inquiries"
                         ? "Buka inquiry untuk melihat detail lead, memperbarui status follow-up, dan menyimpan catatan internal tim."
                         : "Setiap item di fitur ini bisa dibuka, diedit, dihapus, dan disimpan langsung dari satu workspace."}
@@ -833,7 +887,7 @@ export default function AdminPanel() {
             />
           ) : null}
 
-          {activeTab === "users" ? (
+          {canManageUsers && activeTab === "users" ? (
             <AdminUsersSection
               editingUserId={editingUserId}
               editingUser={editingUser}
@@ -854,6 +908,7 @@ export default function AdminPanel() {
 
           {activeTab === "settings" ? (
             <AdminSettingsSection
+              canManageSystemSettings={canManageSystemSettings}
               settingsDirty={settingsDirty}
               settings={settingsForm}
               passwordForm={passwordForm}

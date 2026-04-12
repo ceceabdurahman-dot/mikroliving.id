@@ -1,10 +1,12 @@
 import { RowDataPacket } from "mysql2/promise";
 import { getDb } from "../config/database";
+import { UserRole } from "../types/user";
 
 type UserRow = RowDataPacket & {
   id: number;
   username: string;
   password: string;
+  role: UserRole;
   is_active: number;
   token_version: number;
 };
@@ -12,6 +14,7 @@ type UserRow = RowDataPacket & {
 type UserSessionRow = RowDataPacket & {
   id: number;
   username: string;
+  role: UserRole;
   is_active: number;
   token_version: number;
 };
@@ -19,7 +22,7 @@ type UserSessionRow = RowDataPacket & {
 export async function findUserByUsername(username: string) {
   const db = getDb();
   const [rows] = await db.execute<UserRow[]>(
-    "SELECT id, username, password, is_active, token_version FROM users WHERE username = ? LIMIT 1",
+    "SELECT id, username, password, role, is_active, token_version FROM users WHERE username = ? LIMIT 1",
     [username],
   );
 
@@ -29,7 +32,7 @@ export async function findUserByUsername(username: string) {
 export async function findUserSessionById(userId: number) {
   const db = getDb();
   const [rows] = await db.execute<UserSessionRow[]>(
-    "SELECT id, username, is_active, token_version FROM users WHERE id = ? LIMIT 1",
+    "SELECT id, username, role, is_active, token_version FROM users WHERE id = ? LIMIT 1",
     [userId],
   );
 
@@ -39,7 +42,7 @@ export async function findUserSessionById(userId: number) {
 export async function findUserAuthById(userId: number) {
   const db = getDb();
   const [rows] = await db.execute<UserRow[]>(
-    "SELECT id, username, password, is_active, token_version FROM users WHERE id = ? LIMIT 1",
+    "SELECT id, username, password, role, is_active, token_version FROM users WHERE id = ? LIMIT 1",
     [userId],
   );
 

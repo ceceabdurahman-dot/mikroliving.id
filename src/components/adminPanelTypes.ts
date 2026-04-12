@@ -1,5 +1,5 @@
 export type TabKey = "dashboard" | "projects" | "services" | "insights" | "testimonials" | "users" | "settings" | "inquiries";
-export type UserRole = "admin" | "editor";
+export type UserRole = "superadmin" | "admin" | "editor";
 
 export type ProjectForm = {
   title: string;

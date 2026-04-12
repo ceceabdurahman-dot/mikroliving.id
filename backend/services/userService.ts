@@ -1,7 +1,12 @@
 import bcrypt from "bcryptjs";
-import { CreateUserPayload, ResetUserPasswordPayload, UpdateUserPayload } from "../types/user";
 import {
-  countActiveAdmins,
+  CreateUserPayload,
+  isPrivilegedUserRole,
+  ResetUserPasswordPayload,
+  UpdateUserPayload,
+} from "../types/user";
+import {
+  countActivePrivilegedUsers,
   findAllUsers,
   findUserById,
   insertUser,
@@ -74,12 +79,12 @@ export async function updateAdminUser(
   }
 
   const removesAdminAccess =
-    existingUser.role === "admin" &&
+    isPrivilegedUserRole(existingUser.role) &&
     Boolean(existingUser.is_active) &&
-    (!payload.is_active || payload.role !== "admin");
+    (!payload.is_active || !isPrivilegedUserRole(payload.role));
 
   if (removesAdminAccess) {
-    const activeAdminCount = await countActiveAdmins();
+    const activeAdminCount = await countActivePrivilegedUsers();
     if (activeAdminCount <= 1) {
       return { status: "last_active_admin" };
     }
