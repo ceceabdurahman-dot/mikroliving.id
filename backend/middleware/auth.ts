@@ -32,16 +32,28 @@ function respondForbidden(res: Response) {
   return res.status(403).json({ error: "Forbidden" });
 }
 
+function getBearerToken(req: Request) {
+  const authHeader = req.headers.authorization?.trim();
+
+  if (!authHeader?.toLowerCase().startsWith("bearer ")) {
+    return null;
+  }
+
+  const token = authHeader.slice(7).trim();
+  return token || null;
+}
+
 export async function authenticateToken(req: Request, res: Response, next: NextFunction) {
-  const authHeader = req.headers.authorization;
-  const token = authHeader?.split(" ")[1] || req.cookies?.[AUTH_COOKIE.name];
+  const token = getBearerToken(req) || req.cookies?.[AUTH_COOKIE.name];
 
   if (!token) {
     return respondUnauthorized(res);
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, JWT_SECRET, {
+      algorithms: ["HS256"],
+    });
 
     if (!isAuthenticatedUser(decoded)) {
       return respondUnauthorized(res);

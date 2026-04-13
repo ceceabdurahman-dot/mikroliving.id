@@ -38,15 +38,45 @@ import { authenticateToken, requireAdmin } from "../middleware/auth";
 import { createRateLimiter } from "../middleware/rateLimit";
 import { requireTrustedOrigin } from "../middleware/trustedOrigin";
 
+function getLoginRateLimitKey(req: Parameters<ReturnType<typeof createRateLimiter>>[0]) {
+  const body = req.body && typeof req.body === "object" ? (req.body as Record<string, unknown>) : {};
+  const username = typeof body.username === "string" ? body.username.trim().toLowerCase() : "unknown";
+  const ip = req.ip || req.socket.remoteAddress || "unknown";
+
+  return `ip:${ip}:user:${username || "unknown"}`;
+}
+
+function getAuthenticatedRateLimitKey(req: Parameters<ReturnType<typeof createRateLimiter>>[0]) {
+  const ip = req.ip || req.socket.remoteAddress || "unknown";
+
+  if (req.user) {
+    return `user:${req.user.id}:ip:${ip}`;
+  }
+
+  return `ip:${ip}`;
+}
+
 export function createAdminRoutes() {
   const router = Router();
-  const adminLoginLimiter = createRateLimiter(RATE_LIMITS.adminLogin);
-  const adminWriteLimiter = createRateLimiter(RATE_LIMITS.adminWrite);
-  const uploadLimiter = createRateLimiter(RATE_LIMITS.adminUpload);
-  const trustedAdminWriteOrigin = requireTrustedOrigin();
+  const adminLoginLimiter = createRateLimiter({
+    ...RATE_LIMITS.adminLogin,
+    keyGenerator: getLoginRateLimitKey,
+  });
+  const adminWriteLimiter = createRateLimiter({
+    ...RATE_LIMITS.adminWrite,
+    keyGenerator: getAuthenticatedRateLimitKey,
+  });
+  const uploadLimiter = createRateLimiter({
+    ...RATE_LIMITS.adminUpload,
+    keyGenerator: getAuthenticatedRateLimitKey,
+  });
+  const trustedAdminWriteOrigin = requireTrustedOrigin({
+    requireRequestedWith: true,
+  });
   const trustedAdminLoginOrigin = requireTrustedOrigin({
     allowBearerWithoutOrigin: false,
     requireWithoutSessionCookie: true,
+    requireRequestedWith: true,
   });
 
   router.post("/login", trustedAdminLoginOrigin, adminLoginLimiter, asyncHandler(login));

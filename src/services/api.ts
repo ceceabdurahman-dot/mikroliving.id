@@ -301,7 +301,12 @@ async function withApiError<T>(request: Promise<{ data: T }>): Promise<T> {
   }
 }
 
-const adminRequestConfig = { withCredentials: true };
+const adminRequestConfig = {
+  withCredentials: true,
+  headers: {
+    "X-Requested-With": "XMLHttpRequest",
+  },
+};
 
 export function isApiSessionError(error: unknown) {
   return Boolean(

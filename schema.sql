@@ -292,7 +292,7 @@ INSERT INTO contact_channels (label, value_text, href, icon_key, location_label,
 VALUES
     ('WhatsApp', '+62 812 3456 7890', 'https://wa.me/6281234567890', 'MessageCircle', NULL, 1, 1),
     ('Email Us', 'hello@mikroliving.local', 'mailto:hello@mikroliving.local', 'AtSign', NULL, 2, 1),
-    ('Location', 'Jakarta, Indonesia', '#contact', 'Globe', 'Jakarta, Indonesia', 3, 1)
+    ('Location', 'Jakarta, Indonesia', 'https://mikroliving.id', 'Globe', 'Jakarta, Indonesia', 3, 1)
 ON DUPLICATE KEY UPDATE
     value_text = VALUES(value_text),
     href = VALUES(href),

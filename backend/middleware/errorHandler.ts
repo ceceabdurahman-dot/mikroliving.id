@@ -7,20 +7,38 @@ type ParserError = Error & {
   type?: string;
 };
 
+function getSafePath(req: Request) {
+  return req.path || req.originalUrl.split("?")[0] || req.originalUrl;
+}
+
+function summarizeKeys(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return undefined;
+  }
+
+  const keys = Object.keys(value as Record<string, unknown>).slice(0, 20);
+  return keys.length > 0 ? keys : undefined;
+}
+
 export function errorHandler(error: unknown, req: Request, res: Response, next: NextFunction) {
   void next;
 
   const requestId = req.requestId || "unknown";
+  const bodyKeys = summarizeKeys(req.body);
+  const queryKeys = summarizeKeys(req.query);
+  const requestMeta = {
+    request_id: requestId,
+    method: req.method,
+    path: getSafePath(req),
+    ...(bodyKeys ? { body_keys: bodyKeys } : {}),
+    ...(queryKeys ? { query_keys: queryKeys } : {}),
+  };
 
   if (error instanceof HttpError) {
     logger.warn("http_error", {
-      request_id: requestId,
-      method: req.method,
-      path: req.originalUrl,
+      ...requestMeta,
       status: error.statusCode,
       error: error.message,
-      body: req.body,
-      query: req.query,
     });
 
     return res.status(error.statusCode).json({
@@ -32,9 +50,7 @@ export function errorHandler(error: unknown, req: Request, res: Response, next: 
   const parserError = error as ParserError;
   if (parserError?.status === 400 || parserError?.type === "entity.parse.failed") {
     logger.warn("invalid_json_body", {
-      request_id: requestId,
-      method: req.method,
-      path: req.originalUrl,
+      ...requestMeta,
       status: 400,
       error: "Invalid JSON body.",
     });
@@ -43,11 +59,7 @@ export function errorHandler(error: unknown, req: Request, res: Response, next: 
   }
 
   logger.error("unhandled_error", {
-    request_id: requestId,
-    method: req.method,
-    path: req.originalUrl,
-    body: req.body,
-    query: req.query,
+    ...requestMeta,
     error,
   });
 

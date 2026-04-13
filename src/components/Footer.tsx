@@ -28,7 +28,7 @@ const fallbackNavigationLinks: NavigationLink[] = [
 const fallbackContactChannels: ContactChannel[] = [
   { id: 1, label: "WhatsApp", value_text: "+62 812 3456 7890", href: "#", icon_key: "MessageCircle", sort_order: 1 },
   { id: 2, label: "Email Us", value_text: "hello@mikroliving.local", href: "#", icon_key: "AtSign", sort_order: 2 },
-  { id: 3, label: "Location", value_text: "Jakarta, Indonesia", href: "#", icon_key: "Globe", sort_order: 3 },
+  { id: 3, label: "Location", value_text: "Jakarta, Indonesia", href: "https://mikroliving.id", icon_key: "Globe", sort_order: 3 },
 ];
 
 export default function Footer({
