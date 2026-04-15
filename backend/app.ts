@@ -1,6 +1,7 @@
 import { readFileSync } from "fs";
 import cors, { CorsOptionsDelegate } from "cors";
 import cookieParser from "cookie-parser";
+import csrf from "csurf";
 import express, { Request } from "express";
 import helmet from "helmet";
 import path from "path";
@@ -30,6 +31,14 @@ export async function createApp() {
       origin: origin && isTrustedRequestOrigin(origin, req.headers.host) ? origin : false,
     });
   };
+  const csrfProtection = csrf({
+    cookie: {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: productionRuntime,
+    },
+    ignoreMethods: ["GET", "HEAD", "OPTIONS"],
+  });
 
   app.disable("x-powered-by");
   app.use(
@@ -42,6 +51,7 @@ export async function createApp() {
   app.use(cookieParser());
   app.use("/api", requestId);
   app.use("/api", express.json({ limit: "10mb" }));
+  app.use("/api", csrfProtection);
   app.use("/api", requestLogger, createApiRouter());
   app.use("/api", apiNotFoundHandler);
 
