@@ -1,6 +1,7 @@
 import { AtSign, Globe, LucideIcon, MessageCircle } from "lucide-react";
 import { ContactChannel, NavigationLink } from "../services/api";
 import BrandMark from "./BrandMark";
+import { resolveNavigationHref } from "./publicSiteUtils";
 
 type FooterProps = {
   brandName?: string;
@@ -18,16 +19,16 @@ const iconMap: Record<string, LucideIcon> = {
 
 const fallbackNavigationLinks: NavigationLink[] = [
   { id: 1, label: "Studio", url: "#studio", location: "footer", sort_order: 1 },
-  { id: 2, label: "Portfolio", url: "#portfolio", location: "footer", sort_order: 2 },
+  { id: 2, label: "Portfolio", url: "/projects", location: "footer", sort_order: 2 },
   { id: 3, label: "Services", url: "#services", location: "footer", sort_order: 3 },
-  { id: 4, label: "Privacy Policy", url: "#", location: "legal", sort_order: 1 },
-  { id: 5, label: "Terms of Service", url: "#", location: "legal", sort_order: 2 },
+  { id: 4, label: "Privacy Policy", url: "/privacy-policy", location: "legal", sort_order: 1 },
+  { id: 5, label: "Terms of Service", url: "/terms-of-service", location: "legal", sort_order: 2 },
 ];
 
 const fallbackContactChannels: ContactChannel[] = [
   { id: 1, label: "WhatsApp", value_text: "+62 812 3456 7890", href: "#", icon_key: "MessageCircle", sort_order: 1 },
   { id: 2, label: "Email Us", value_text: "hello@mikroliving.local", href: "#", icon_key: "AtSign", sort_order: 2 },
-  { id: 3, label: "Location", value_text: "Jakarta, Indonesia", href: "#", icon_key: "Globe", sort_order: 3 },
+  { id: 3, label: "Location", value_text: "Jakarta, Indonesia", href: "https://mikroliving.id", icon_key: "Globe", sort_order: 3 },
 ];
 
 export default function Footer({
@@ -37,6 +38,7 @@ export default function Footer({
   navigationLinks,
   contactChannels,
 }: FooterProps) {
+  const currentPath = typeof window !== "undefined" ? window.location.pathname : "/";
   const footerLinks = (navigationLinks ?? fallbackNavigationLinks).filter((item) => item.location === "footer");
   const legalLinks = (navigationLinks ?? fallbackNavigationLinks).filter((item) => item.location === "legal");
   const contacts = contactChannels && contactChannels.length > 0 ? contactChannels : fallbackContactChannels;
@@ -51,7 +53,7 @@ export default function Footer({
             {contacts.map((channel) => {
               const Icon = iconMap[channel.icon_key ?? ""] ?? Globe;
               return (
-                <a key={channel.id} href={channel.href ?? "#"} className="text-stone-400 hover:text-primary transition-colors">
+                <a key={channel.id} href={resolveNavigationHref(channel.href ?? "#", channel.label, currentPath)} className="text-stone-400 hover:text-primary transition-colors">
                   <Icon className="w-5 h-5" />
                 </a>
               );
@@ -63,7 +65,7 @@ export default function Footer({
           <div className="flex flex-col gap-4">
             <span className="text-xs uppercase tracking-widest text-stone-900 font-bold mb-2">Navigation</span>
             {footerLinks.map((link) => (
-              <a key={link.id} href={link.url} className="text-stone-500 hover:text-primary transition-colors text-sm">
+              <a key={link.id} href={resolveNavigationHref(link.url, link.label, currentPath)} className="text-stone-500 hover:text-primary transition-colors text-sm">
                 {link.label}
               </a>
             ))}
@@ -71,7 +73,7 @@ export default function Footer({
           <div className="flex flex-col gap-4">
             <span className="text-xs uppercase tracking-widest text-stone-900 font-bold mb-2">Contact</span>
             {contacts.map((channel) => (
-              <a key={channel.id} href={channel.href ?? "#"} className="text-stone-500 hover:text-primary transition-colors text-sm">
+              <a key={channel.id} href={resolveNavigationHref(channel.href ?? "#", channel.label, currentPath)} className="text-stone-500 hover:text-primary transition-colors text-sm">
                 {channel.label}
               </a>
             ))}
@@ -79,7 +81,7 @@ export default function Footer({
           <div className="flex flex-col gap-4">
             <span className="text-xs uppercase tracking-widest text-stone-900 font-bold mb-2">Legal</span>
             {legalLinks.map((link) => (
-              <a key={link.id} href={link.url} className="text-stone-500 hover:text-primary transition-colors text-sm">
+              <a key={link.id} href={resolveNavigationHref(link.url, link.label, currentPath)} className="text-stone-500 hover:text-primary transition-colors text-sm">
                 {link.label}
               </a>
             ))}

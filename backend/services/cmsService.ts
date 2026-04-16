@@ -22,10 +22,12 @@ import {
   findAllContactChannels,
   findAllInsights,
   findAllNavigationLinks,
+  findPublishedInsights,
   findAllServices,
   findAllTestimonials,
   findFeaturedTestimonial,
   findPublicContactChannels,
+  findPublicInsightBySlug,
   findPublicInsights,
   findPublicNavigationLinks,
   findPublicServices,
@@ -90,7 +92,7 @@ const defaultNavigationLinks: NavigationLinkRecord[] = [
 const defaultContactChannels: ContactChannelRecord[] = [
   { id: 1, label: "WhatsApp", value_text: "+62 812 3456 7890", href: "https://wa.me/6281234567890", icon_key: "MessageCircle", location_label: null, sort_order: 1, is_active: 1 },
   { id: 2, label: "Email Us", value_text: "hello@mikroliving.local", href: "mailto:hello@mikroliving.local", icon_key: "AtSign", location_label: null, sort_order: 2, is_active: 1 },
-  { id: 3, label: "Location", value_text: "Jakarta, Indonesia", href: "#contact", icon_key: "Globe", location_label: "Jakarta, Indonesia", sort_order: 3, is_active: 1 },
+  { id: 3, label: "Location", value_text: "Jakarta, Indonesia", href: "https://mikroliving.id", icon_key: "Globe", location_label: "Jakarta, Indonesia", sort_order: 3, is_active: 1 },
 ];
 
 function toSettingsMap(rows: SiteSettingRecord[]) {
@@ -131,6 +133,21 @@ export async function getAdminContent() {
   ]);
 
   return { services, insights, testimonials, settings, navigation_links, contact_channels };
+}
+
+export async function getPublishedInsights() {
+  const insights = await findPublishedInsights();
+  return insights.length > 0 ? insights : defaultInsights;
+}
+
+export async function getPublishedInsightBySlug(slug: string) {
+  const insight = await findPublicInsightBySlug(slug);
+
+  if (insight) {
+    return insight;
+  }
+
+  return defaultInsights.find((item) => item.slug === slug) ?? null;
 }
 
 export async function createService(payload: ServicePayload) { return insertService(payload); }

@@ -34,6 +34,16 @@ export async function findPublicProjects() {
   return rows;
 }
 
+export async function findPublicProjectById(projectId: number) {
+  const db = getDb();
+  const [rows] = await db.execute<(RowDataPacket & ProjectRecord)[]>(
+    `SELECT ${PUBLIC_PROJECT_FIELDS} FROM projects WHERE id = ? AND status = ? LIMIT 1`,
+    [projectId, "published"],
+  );
+
+  return rows[0] ?? null;
+}
+
 export async function insertProject(project: ProjectPayload) {
   const db = getDb();
   const [result] = await db.execute<ResultSetHeader>(

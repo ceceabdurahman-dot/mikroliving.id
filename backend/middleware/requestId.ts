@@ -7,9 +7,20 @@ declare module "express-serve-static-core" {
   }
 }
 
+const REQUEST_ID_PATTERN = /^[A-Za-z0-9._:-]{8,128}$/;
+
+function getSafeIncomingRequestId(value: string | undefined) {
+  const trimmed = value?.trim();
+
+  if (!trimmed || !REQUEST_ID_PATTERN.test(trimmed)) {
+    return null;
+  }
+
+  return trimmed;
+}
+
 export function requestId(req: Request, res: Response, next: NextFunction) {
-  const incomingRequestId = req.get("x-request-id");
-  const id = incomingRequestId && incomingRequestId.trim() ? incomingRequestId.trim() : randomUUID();
+  const id = getSafeIncomingRequestId(req.get("x-request-id")) ?? randomUUID();
 
   req.requestId = id;
   res.setHeader("X-Request-Id", id);

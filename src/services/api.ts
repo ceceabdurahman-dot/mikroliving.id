@@ -301,7 +301,12 @@ async function withApiError<T>(request: Promise<{ data: T }>): Promise<T> {
   }
 }
 
-const adminRequestConfig = { withCredentials: true };
+const adminRequestConfig = {
+  withCredentials: true,
+  headers: {
+    "X-Requested-With": "XMLHttpRequest",
+  },
+};
 
 export function isApiSessionError(error: unknown) {
   return Boolean(
@@ -315,6 +320,9 @@ export function isApiSessionError(error: unknown) {
 export const api = {
   getHomepage: async (): Promise<HomepageContent> => (await axios.get(`${API_BASE_URL}/homepage`)).data,
   getProjects: async (): Promise<Project[]> => (await axios.get(`${API_BASE_URL}/projects`)).data,
+  getProjectById: async (id: number): Promise<Project> => (await axios.get(`${API_BASE_URL}/projects/${id}`)).data,
+  getInsights: async (): Promise<InsightItem[]> => (await axios.get(`${API_BASE_URL}/insights`)).data,
+  getInsightBySlug: async (slug: string): Promise<InsightItem> => (await axios.get(`${API_BASE_URL}/insights/${slug}`)).data,
   submitInquiry: async (data: { name: string; email: string; phone?: string; message: string }) =>
     (await axios.post(`${API_BASE_URL}/contact`, data)).data,
   login: async (credentials: { username: string; password: string }) =>

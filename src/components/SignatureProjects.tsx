@@ -45,6 +45,10 @@ export default function SignatureProjects() {
               A curated selection of our finest work across diverse residential scales and styles.
             </p>
           </div>
+          <a href="/projects" className="inline-flex items-center gap-2 text-sm font-bold text-primary">
+            Explore Projects
+            <ArrowRight className="h-5 w-5" />
+          </a>
           <div className="flex w-full md:w-auto gap-4 sm:gap-6 text-sm font-medium overflow-x-auto no-scrollbar pb-2">
             {["All", "Apartment", "Residential", "Kitchen", "Bedroom"].map((category) => (
               <button
@@ -80,8 +84,9 @@ export default function SignatureProjects() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
             {filteredProjects.map((project, idx) => (
-              <motion.div
+              <motion.a
                 key={project.id}
+                href={`/projects/${project.id}`}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -112,7 +117,7 @@ export default function SignatureProjects() {
                     </p>
                   ) : null}
                 </div>
-              </motion.div>
+              </motion.a>
             ))}
           </div>
         )}
